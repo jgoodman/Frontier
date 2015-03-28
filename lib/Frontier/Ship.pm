@@ -2,10 +2,11 @@ package Frontier::Ship;
 
 use strict;
 use warnings;
-use base 'Frontier::Base';
 
 sub new {
-    my $self = shift->SUPER::new(@_);
+    my $class = shift;
+    my $args  = shift || { };
+    my $self  = bless $args, $class;
     $self->$_ foreach (qw(hull shields energy));
     return $self;
 }
