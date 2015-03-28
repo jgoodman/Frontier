@@ -57,6 +57,7 @@ function drawBoard() {
     drawObj(json.obj_is[key]);
   }
   ctx.translate(-canvas.width/2,-canvas.height/2);
+  updateLongRange();
   pctx.drawImage(secondaryCanvas,0,0);
   if (json.logs) {
     logs = document.getElementById('logs');
@@ -74,6 +75,31 @@ function updateObj(obj) {
     diff = (obj[thing] - obj2[thing]) * drawTimeMod;
     obj2[thing] = obj2[thing] + diff;
   }
+}
+
+function updateLongRange() {
+      ctx.beginPath();
+      ctx.arc(70, 70, 50, 0, 2 * Math.PI, false);
+      ctx.fillStyle = '#222';
+      ctx.fill();
+      ctx.translate(70,70);
+
+      ctx.fillStyle = 'red';
+      longScale = 0.02;
+      for (var key in json.obj) {
+  	ctx.fillRect(json.obj[key]['x'] * longScale ,json.obj[key]['y'] * longScale ,2,2);
+      }
+      for (var key in json.obj_long) {
+        ctx.rotate(json.obj_long[key]);
+  	ctx.fillRect(32,32,2,2);
+        ctx.rotate(-json.obj_long[key]);
+      }
+
+      ctx.translate(-70,-70);
+      ctx.arc(70, 70, 50, 0, 2 * Math.PI, false);
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#333';
+      ctx.stroke();
 }
 
 function drawObj(obj) {
@@ -107,6 +133,7 @@ function move() {
 
   // mimic a request to the server
   json.obj = mock_server();
+  json.obj_long = mock_server_long();
 
   newTime = performance.now();
   moveTime = newTime - lastTime;
