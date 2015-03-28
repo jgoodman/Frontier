@@ -2,7 +2,6 @@ package Frontier;
 
 use strict;
 use warnings;
-use base 'Frontier::Base';
 
 1;
 
