@@ -4,6 +4,18 @@ use strict;
 use warnings;
 use base 'Respite::Base';
 
+sub api_meta {
+    return shift->{'api_meta'} ||= { lib_dirs  => 1 };
+}
+
+sub __hello {
+    my ($self, $args) = @_;
+    return {
+        msg         => 'hello from frontier',
+        server_time => time(),
+    }
+}
+
 1;
 
 __END__
