@@ -5,32 +5,15 @@ use warnings;
 
 sub table { 'ship' }
 
-sub new {
-    my $class = shift;
-    my $args  = shift || { };
-    my $self  = bless $args, $class;
-    $self->$_ foreach (qw(hull shields energy));
-    return $self;
-}
-
-sub stats { return shift->{'stats'} //= { } }
-
-sub hull { return shift->_get_or_set('hull', @_) }
-
-sub shields { return shift->_get_or_set('shields', @_) }
-
-sub energy { return shift->_get_or_set('energy', @_) }
-
-sub _get_or_set {
-    my $self  = shift;
-    my $key   = shift;
-    my $value = shift;
-    my $stats = $self->stats;
-    if(defined $value) {
-        die "$key does not match type UINT" unless $value =~ m/^\d+$/;
-        $stats->{$key} = $value;
+sub meta {
+    return {
+        user_id => {
+            join_class => 'Frontier::User',
+        },
+        name => {
+            desc => 'Ship name',
+        }
     }
-    return $stats->{$key} //= 1;
 }
 
 1;
@@ -53,18 +36,6 @@ Constructor method which initializes stats for the ship object.
 
 =head2 stats
 
-Returns a hashref pertaining to the objects stats.
-
-=head hull
-
-Get/set the INT value of "hull" which is a stat of a ship object.
-
-=head2 shields
-
-Get/set the  INT value of "shields" which is a stat of a ship object.
-
-=head2 energy
-
-Get/set the INT value of "energy" which is a stat of a ship object.
+Returns a Frontier::ShipStats object pertaining to the Frontier::Ship object.
 
 =cut
