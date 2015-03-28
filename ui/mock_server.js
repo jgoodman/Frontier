@@ -6,8 +6,8 @@ var mock_obj = {
       "team" : 0, // useful for friendly fire
 // origin_id tells you where the object (usually a projectile) came from
       "scale" : 1,
-      "shield" : 0.5,
-      "hull" : 0.1,
+      "shield" : 1,
+      "hull" : 1,
       "energy" : 1,
       "x" : 0,
       "y" : 0,
@@ -89,7 +89,12 @@ function mock_server() {
   obj.y = obj.y + Math.sin(obj.move_radians) * 350;
 
   obj = mock_obj[2];
-if (obj) {
+if (mock_cnt == 11) {
+  mock_obj[2].img = 'explosion1.png';
+  mock_obj[0].shield = 0.5;
+} else if (mock_cnt >= 12) {
+  delete mock_obj[2];
+} else if (obj) {
   obj.move_radians = obj.move_radians - Math.PI/6;
   obj.obj_radians = obj.move_radians; // simple
   obj.x = obj.x + Math.cos(obj.move_radians) * 150;
