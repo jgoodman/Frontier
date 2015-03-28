@@ -1,0 +1,21 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <style>
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+    </style>
+  </head>
+<body onresize="resize_canvas()" onload="resize_canvas()" bgcolor="#666">
+<center>
+<canvas id="myCanvas" width="900" height="600"></canvas><br>
+<div id="logs" style="max-height:85px;overflow:auto;white-space:pre;">
+Logs and other data may appear here<br>
+</div>
+</center>
+<script src="mock_server.js"></script>
+<script src="engine.js"></script>
+</body>
+</html>
