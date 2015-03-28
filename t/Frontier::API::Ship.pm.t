@@ -5,6 +5,6 @@ use warnings;
 
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
-use Test::Frontier::Server;
+use Test::Frontier::API::Ship;
 
-Test::Frontier::Server->new->runtests();
+Test::Frontier::API::Ship->new->runtests();

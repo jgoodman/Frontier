@@ -1,4 +1,4 @@
-package Test::Frontier::Server;
+package Test::Frontier::API;
 
 use strict;
 use warnings;
@@ -44,7 +44,7 @@ sub startup : Test(startup => +6) {
 
     my ($client, $server) = setup_test_server({
         service  => 'frontier_test',
-        api_meta => 'Frontier::Base',
+        api_meta => 'Frontier::API',
         flat     => 1,
         client_utf8_encoded => 1,
         no_ssl => 1,
@@ -54,26 +54,20 @@ sub startup : Test(startup => +6) {
     ok($self->{'server'} = $server, 'Got server');
 }
 
-sub hello : Test(1) {
+sub __hello : Test(1) {
     my $self = shift;
     my $resp = $self->client->hello;
     cmp_deeply(
         $resp,
         { msg => 'hello from frontier', server_time => re('^\d+$') },
-        'Call api method hello'
+        'Call api method "hello"'
     ) or diag(explain($resp));
 }
 
-sub methods : Test(1) {
+sub __methods : Test(1) {
     my $self = shift;
     my $resp = $self->client->methods;
-    cmp_deeply($resp, { }, 'Call api method methods') or diag(explain($resp));
-}
-
-sub ship_info : Test(1) {
-    my $self = shift;
-    my $resp = $self->client->ship_info;
-    cmp_deeply($resp, { }, 'Call api method ship_info') or diag(explain($resp));
+    ok($resp->{'methods'}, 'Call api method "methods"') or diag(explain($resp));
 }
 
 sub client { return shift->{'client'} }
@@ -86,7 +80,7 @@ __END__
 
 =head1 NAME
 
-Test::Frontier::Server - Unit Tests for Frontier::Server module
+Test::Frontier::API - Unit Tests for Frontier::API module
 
 =head1 FIXTURES
 
@@ -104,14 +98,16 @@ Makes a basic hello call an validates the response
 
 Tests the hello api call
 
+=head methods
+
 =head1 METHODS
 
 =head2 client
 
-Returns the Frontier::Client object which was created during startup
+Returns the Respite::Client object which was created during startup
 
 =head2 server
 
-Returns the Frontier::Server object which was created during startup
+Returns the Respite::Server object which was created during startup
 
 =cut

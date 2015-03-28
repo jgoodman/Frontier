@@ -1,4 +1,4 @@
-package Frontier::Base;
+package Frontier::API;
 
 use strict;
 use warnings;
@@ -22,7 +22,7 @@ __END__
 
 =head1 NAME
 
-Frontier::Base
+Frontier::API
 
 =head1 SYNOPSIS
 

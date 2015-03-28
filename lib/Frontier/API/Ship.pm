@@ -1,9 +1,9 @@
-package Frontier::Base::Ship;
+package Frontier::API::Ship;
 
 use strict;
 use warnings;
 use Frontier::Ship;
-use base 'Frontier::Base';
+use base 'Frontier::API';
 
 sub __ship_info__meta {
     return {
