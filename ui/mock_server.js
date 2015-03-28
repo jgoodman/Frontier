@@ -58,6 +58,15 @@ var mock_obj = {
     }
 };
 
+function mock_server_long() {
+  return {
+    "5" : 3, // radians, this is basically the direction to something of interest
+    "6" : 1,
+    "7" : 2,
+    "8" : 1.5,
+  };
+}
+
 function mock_server() {
   // update the json with the new location
   obj = mock_obj[0];
