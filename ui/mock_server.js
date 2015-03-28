@@ -81,6 +81,26 @@ function mock_server() {
   obj = mock_obj[0];
   obj.move_radians = obj.move_radians + Math.PI/15;
   obj.obj_radians = obj.move_radians; // simple
+  if (obj.energy < 1) {
+    obj.energy = obj.energy + 0.1;
+    if (obj.energy > 1) {
+      obj.energy = 1;
+    }
+  }
+  if (obj.shield < 1 && obj.energy >= 0.1) {
+    obj.shield = obj.shield + 0.05;
+    obj.energy = obj.energy - 0.07;
+    if (obj.shield > 1) {
+      obj.shield = 1;
+    }
+  }
+  if (obj.hull < 1 && obj.energy >= 0.1) {
+    obj.hull = obj.hull + 0.01;
+    obj.energy = obj.energy - 0.07;
+    if (obj.hull > 1) {
+      obj.hull = 1;
+    }
+  }
 
   obj = mock_obj[1];
   obj.move_radians = obj.move_radians + Math.PI/6;
@@ -92,6 +112,7 @@ function mock_server() {
 if (mock_cnt == 11) {
   mock_obj[2].img = 'explosion1.png';
   mock_obj[0].shield = 0.5;
+  mock_obj[0].hull = 0.5;
 } else if (mock_cnt >= 12) {
   delete mock_obj[2];
 } else if (obj) {
@@ -114,6 +135,7 @@ if (mock_cnt == 11) {
     "obj_speed" : 123
   };
   mock_obj[2] = obj;
+  mock_obj[4].energy = 0.5; 
 }
 
   obj = mock_obj[3];
@@ -127,6 +149,12 @@ if (mock_cnt == 11) {
   obj.obj_radians = obj.move_radians - Math.PI/2; // fly sideways
   obj.x = obj.x + Math.cos(obj.move_radians) * 50;
   obj.y = obj.y + Math.sin(obj.move_radians) * 50;
+  if (obj.energy < 1) {
+    obj.energy = obj.energy + 0.1;
+    if (obj.energy > 1) {
+      obj.energy = 1;
+    }
+  }
 
   if (Math.random() > 0.88) {
     json.logs = ['This is a random message '+Math.random(),'Message 2'];
