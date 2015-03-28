@@ -1,4 +1,4 @@
-package Test::BaseClass;
+package Test::Frontier::Obj;
 
 use strict;
 use warnings;
@@ -66,7 +66,7 @@ __END__
 
 =head1 NAME
 
-Test::BaseClass
+Test::Frontier::Obj
 
 =head1 SYNOPSIS
 

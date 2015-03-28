@@ -7,7 +7,7 @@ use base 'Frontier::API';
 
 sub __ship_info__meta {
     return {
-        desc => 'Query single ship',
+        desc => 'Query single ship info',
         args => { },
         resp => { },
     },

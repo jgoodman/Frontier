@@ -5,7 +5,7 @@ use warnings;
 use Test::More;
 use Test::Deep;
 use Test::Exception;
-use base 'Test::BaseClass';
+use base 'Test::Frontier::Obj';
 
 sub has_subs { ( shift->SUPER::has_subs, qw(stats hull shields energy) ) }
 

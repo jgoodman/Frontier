@@ -3,6 +3,8 @@ package Frontier::Ship;
 use strict;
 use warnings;
 
+sub table { 'ship' }
+
 sub new {
     my $class = shift;
     my $args  = shift || { };
