@@ -120,11 +120,11 @@ function drawObj(obj) {
   ctx.rotate(-obj.obj_radians);
 
   ctx.fillStyle="blue";
-  ctx.fillRect(-25,25,50*obj.shield,3);
+  ctx.fillRect(-25,25,50*json.obj[obj.id].shield,3);
   ctx.fillStyle="green";
-  ctx.fillRect(-25,29,50*obj.hull,3);
+  ctx.fillRect(-25,29,50*json.obj[obj.id].hull,3);
   ctx.fillStyle="red";
-  ctx.fillRect(-25,33,50*obj.energy,3);
+  ctx.fillRect(-25,33,50*json.obj[obj.id].energy,3);
 
   ctx.translate(-obj.x, -obj.y);
 }
@@ -154,6 +154,7 @@ function move() {
         json.obj_is[id]['y'] = json.obj_is[obj.origin_id]['y'];
       }
     }
+    json.obj_is[id].img = json.obj[id].img; // make sure we get image updates
   }
   setTimeout(function(){move()},1000);
 }
