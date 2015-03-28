@@ -71,7 +71,7 @@ function drawBoard() {
 
 function updateObj(obj) {
   obj2 = json.obj_is[obj.id];
-  for (var thing in {x:1,y:1,move_radians:1,ship_radians:1} ) {
+  for (var thing in {x:1,y:1,move_radians:1,obj_radians:1} ) {
     diff = (obj[thing] - obj2[thing]) * drawTimeMod;
     obj2[thing] = obj2[thing] + diff;
   }
@@ -105,7 +105,7 @@ function updateLongRange() {
 function drawObj(obj) {
   imageObj=preloadImages(obj);
   ctx.translate(obj.x, obj.y);
-  ctx.rotate(obj.ship_radians);
+  ctx.rotate(obj.obj_radians);
   if (imageObj.srcWidth) {
     width = imageObj.width;
     height = imageObj.height;
@@ -117,7 +117,7 @@ function drawObj(obj) {
     ctx.fillStyle="blue";
     ctx.fillRect(15,-2,5,3);
   }
-  ctx.rotate(-obj.ship_radians);
+  ctx.rotate(-obj.obj_radians);
 
   ctx.fillStyle="blue";
   ctx.fillRect(-25,25,50*obj.shield,3);
@@ -141,7 +141,7 @@ function move() {
 
   for (var id in json.obj) {
     obj = json.obj[id];
-    for (var thing in {x:1,y:1,ship_radians:1,move_radians:1,scale:1} ) {
+    for (var thing in {x:1,y:1,obj_radians:1,move_radians:1,scale:1} ) {
       obj[thing] = Number(obj[thing]); // omg NaN sucks
     }
     if (!json.obj_is[id]) {
