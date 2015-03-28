@@ -149,6 +149,10 @@ function move() {
       for (var key in obj) {
         json.obj_is[id][key] = obj[key];
       }
+      if (obj.origin_id) {
+        json.obj_is[id]['x'] = json.obj_is[obj.origin_id]['x'];
+        json.obj_is[id]['y'] = json.obj_is[obj.origin_id]['y'];
+      }
     }
   }
   setTimeout(function(){move()},1000);

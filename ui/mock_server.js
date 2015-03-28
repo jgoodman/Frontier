@@ -4,6 +4,7 @@ var mock_obj = {
       "img" : "redship.png",
       "type" : "ship",
       "team" : 0, // useful for friendly fire
+// origin_id tells you where the object (usually a projectile) came from
       "scale" : 1,
       "shield" : 0.5,
       "hull" : 0.1,
@@ -23,21 +24,8 @@ var mock_obj = {
       "hull" : 1,
       "shield" : 1,
       "energy" : 1,
-      "x" : 450,
-      "y" : 150,
-      "move_radians" : 0,
-      "obj_radians" : 0,
-      "obj_speed" : 123
-    },
-    "2" : {
-      "id" : "2",
-      "origin_id" : "1", // where the object came from
-      "img" : "missile.png",
-      "type" : "weapon",
-      "team" : 1,
-      "scale" : 0.5,
-      "x" : 150,
-      "y" : -50,
+      "x" : 100,
+      "y" : -100,
       "move_radians" : 0,
       "obj_radians" : 0,
       "obj_speed" : 123
@@ -83,10 +71,13 @@ function mock_server_long() {
   };
 }
 
+mock_cnt=0;
 function mock_server() {
   // update the json with the new location
   //
   // currently ignoring obj_speed
+  mock_cnt = mock_cnt+1;
+
   obj = mock_obj[0];
   obj.move_radians = obj.move_radians + Math.PI/15;
   obj.obj_radians = obj.move_radians; // simple
@@ -94,14 +85,31 @@ function mock_server() {
   obj = mock_obj[1];
   obj.move_radians = obj.move_radians + Math.PI/6;
   obj.obj_radians = obj.move_radians; // simple
-  obj.x = obj.x + Math.cos(obj.move_radians) * 150;
-  obj.y = obj.y + Math.sin(obj.move_radians) * 50;
-
-  obj = mock_obj[2];
-  obj.move_radians = obj.move_radians + Math.PI/6;
-  obj.obj_radians = obj.move_radians; // simple
   obj.x = obj.x + Math.cos(obj.move_radians) * 350;
   obj.y = obj.y + Math.sin(obj.move_radians) * 350;
+
+  obj = mock_obj[2];
+if (obj) {
+  obj.move_radians = obj.move_radians - Math.PI/6;
+  obj.obj_radians = obj.move_radians; // simple
+  obj.x = obj.x + Math.cos(obj.move_radians) * 150;
+  obj.y = obj.y + Math.sin(obj.move_radians) * 50;
+} else if (mock_cnt > 5) {
+  obj = {
+    "id" : "2",
+    "origin_id" : "4", // where the object came from
+    "img" : "missile.png",
+    "type" : "projectile",
+    "team" : 1,
+    "scale" : 0.5,
+    "x" : mock_obj[4].x - 50,
+    "y" : mock_obj[4].y + 50,
+    "move_radians" : mock_obj[4].obj_radians,
+    "obj_radians" : mock_obj[4].obj_radians,
+    "obj_speed" : 123
+  };
+  mock_obj[2] = obj;
+}
 
   obj = mock_obj[3];
   obj.move_radians = obj.move_radians - Math.PI/9;
@@ -111,7 +119,7 @@ function mock_server() {
 
   obj = mock_obj[4];
   obj.move_radians = obj.move_radians - Math.PI/9;
-  obj.obj_radians = obj.move_radians + Math.PI/2; // fly sideways
+  obj.obj_radians = obj.move_radians - Math.PI/2; // fly sideways
   obj.x = obj.x + Math.cos(obj.move_radians) * 50;
   obj.y = obj.y + Math.sin(obj.move_radians) * 50;
 
