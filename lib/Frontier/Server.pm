@@ -2,7 +2,7 @@ package Frontier::Server;
 
 use strict;
 use warnings;
-use base 'Respite::Base';
+use base 'Respite::Server';
 
 1;
 
