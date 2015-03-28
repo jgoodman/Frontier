@@ -2,12 +2,13 @@
 
 use strict;
 use warnings;
-use Test::More tests => 10;
+use Test::More tests => 11;
 
 # Libraries for Testing
 require_ok('Test::Class');
 require_ok('Test::Deep');
 require_ok('Test::Exception');
+require_ok('Sub::Override');
 
 # Libraries for Respite
 require_ok('Respite::AutoDoc');
