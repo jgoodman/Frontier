@@ -16,6 +16,4 @@ Test::Frontier::Base - Unit Tests for Frontier::Base module
 
 Below are test methods this module contains
 
-=head2 stats
-
 =cut
