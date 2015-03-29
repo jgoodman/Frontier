@@ -6,8 +6,8 @@ use base 'Frontier::Obj';
 
 sub table { 'user' }
 
-sub glossary {
-    return {
+sub meta {
+    return shift->{
         name => {
             desc => 'Username',
         },
