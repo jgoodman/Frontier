@@ -67,23 +67,67 @@ sub set {
 
 sub pretty { return shift->info }
 
+sub full_meta {
+    my $self = shift;
+
+    my %join;
+    my $meta = $self->meta;
+    foreach my $key (keys %$meta) {
+        my $hash = $meta->{$key};
+        my $join_class = $hash->{'join_class'};
+        next unless $join_class;
+        my $join_meta = $join{$join_class} ||= do {
+            $self->require_class($join_class);
+            # TODO: We need to prevent circular referencing somehow
+            $join_class->full_meta;
+        };
+        my $join_key = $hash->{'join_key'} ||= do {
+            my $_key = $join_meta->{$key} or do {
+                my $join_table = $join_class->table.'_';
+                $key =~ m/^$join_table(\w+)$/ ? $1 : throw "Regex mismatch";
+            };
+            throw "Meta key not found in $join_class: $key" unless $_key;
+            $_key;
+        };
+        my $join_hash = $join_meta->{$join_key};
+        foreach my $k (keys %$join_hash) {
+            $hash->{$k} = $join_hash->{$k} unless exists $hash->{$k};
+        }
+    }
+    return $meta;
+}
+
+sub require_class {
+    my $self  = shift;
+    my $class = shift or throw 'class undef';
+    my $file  = "$class.pm";
+    $file =~ s/::/\//g;
+    require $file;
+    return $class;
+}
+
 sub build_create_schema {
     my $self = shift;
 
+    my %fkey;
     my $table  = $self->table;
-    my $schema = "CREATE TABLE $table ( id int NOT NULL AUTO_INCREMENT,";
-    my $meta = $self->meta;
+    my $schema = "CREATE TABLE $table ( id INT NOT NULL AUTO_INCREMENT,";
+    my $meta = $self->full_meta;
     foreach my $col (keys %$meta) {
         my $hash = $meta->{$col};
-        $schmea .= " $col";
-        if($hash->{'join_class'}) {
-            # TODO code out joins
-        }
-        if(my $type = $hash->{'type'}) {
-            if uc($type) eq 'UINT'
+        $schema .= " $col";
+        if(my $type  = $hash->{'type'}) {
+            $schema .= ' INT' if uc($type) eq 'UINT';
         }
         else {
-            $schema
+            # TODO code out max_len and min_len;
+            $schema .= ' VARCHAR(80)';
+        }
+        $schema .= ' NOT NULL' if $hash->{'required'};
+        $schema .= ',';
+        if(my $join_class = $hash->{'join_class'}) {
+            my $ftable = $join_class->table;
+            $fkey{$ftable} = 1;
         }
     }
     $schema .= " CONSTRAINT pk_$table\_id PRIMARY KEY (id),";
@@ -165,6 +209,15 @@ sub set_info should be used instead to access that information.
 Used to return object data to clients using the API.
 By default, returns the info hashref.
 Can be overridden in subclass to customize what should be returned to clients.
+
+=head2 full_meta
+
+Calls $self->meta and loops through the keys.
+If "join_class" is found, it will inherit the hashref from the foriegn class.
+
+=head2 require_class
+
+Helper method to load another module
 
 =head2 build_create_schema
 
