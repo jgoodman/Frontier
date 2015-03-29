@@ -2,6 +2,7 @@ package Frontier::API;
 
 use strict;
 use warnings;
+use Throw qw(throw);
 use base 'Respite::Base';
 
 sub api_meta {
