@@ -9,7 +9,7 @@ sub meta {
     return {
         ship_id => {
             join_class => 'Frontier::Ship',
-        }
+        },
         hull => {
             desc    => 'Hull',
             type    => 'UINT',

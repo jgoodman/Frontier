@@ -2,7 +2,7 @@ package Frontier::Obj;
 
 use strict;
 use warnings;
-use Throw;
+use Throw qw(throw);
 
 sub table { throw 'table not overridden' }
 sub meta  { throw 'meta not overridden' }
@@ -24,7 +24,7 @@ sub new {
     $meta->{'id'} //= { }; # Allow for universal id
     my @bad_keys;
     foreach my $key (%$info) { push @bad_keys, $key unless exists $meta->{$key} }
-    throw 'bad keys supplied for info: '.join(', ' @bad_keys) if scalar @bad_keys;
+    throw 'bad keys supplied for info: '.join(', ', @bad_keys) if scalar @bad_keys;
 
     return $self;
 }
