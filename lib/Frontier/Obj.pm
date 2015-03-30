@@ -2,6 +2,7 @@ package Frontier::Obj;
 
 use strict;
 use warnings;
+use Data::Dumper;
 use Throw qw(throw);
 
 sub table { throw 'table not overridden' }
@@ -9,19 +10,21 @@ sub meta  { throw 'meta not overridden' }
 
 sub new {
     my $proto = shift;
-    my $args  = shift;
+    my $args  = shift || { };
 
     unless(ref $args) {
-        #TODO: We are assuming this is the id. Code out a lookup
-        $args = { id => $args->{'id'} };
+        my $id = $args;
+        my $table = $proto->table;
+        my $row = $proto->dbh->selectrow_hashref("SELECT * FROM $table WHERE id = ?", { }, $id);
+        throw "$table not found" unless $row;
+        $args = { info => $row };
     }
 
     my $class = ref $proto || $proto;
     my $self  = bless $args, $class;
 
     my $info  = $self->info;
-    my $meta  = $self->meta;
-    $meta->{'id'} //= { }; # Allow for universal id
+    my $meta  = $self->full_meta;
     my @bad_keys;
     foreach my $key (%$info) { push @bad_keys, $key unless exists $meta->{$key} }
     throw 'bad keys supplied for info: '.join(', ', @bad_keys) if scalar @bad_keys;
@@ -67,11 +70,57 @@ sub set {
 
 sub pretty { return shift->info }
 
+sub create {
+    my $self = shift;
+
+    my @cols;
+    my @hold;
+    my @vals;
+    my $info = $self->info;
+    foreach my $col (keys %$info) {
+        push @cols, $col;
+        push @hold, '?';
+        push @vals, $info->{$col};
+    }
+
+    my $table = $self->table;
+    my $sql = "INSERT INTO $table (".join(',',@cols).') VALUES ('.join(',',@hold).')';
+    $self->dbh->do($sql, { }, @vals);
+
+    my $id = $self->dbh->last_insert_id(undef, undef, $table, 'id');
+    $self->set('info', $self->new($id)->info);
+
+    return $self;
+}
+
+sub update {
+    my $self = shift;
+    throw 'update method not yet implemented'; # TODO
+    return $self;
+}
+
+sub delete {
+    my $self = shift;
+    throw 'update method not yet implemented'; # TODO
+    return $self;
+}
+
+our $DBH;
+sub dbh {
+    my $self = shift;
+    return $DBH ||= DBI->connect("dbi:SQLite:dbname=frontier.db","","");
+}
+
 sub full_meta {
     my $self = shift;
 
     my %join;
     my $meta = $self->meta;
+
+    $meta->{'id'} = {
+        desc => 'Primary key for '.$self->table,
+    };
+
     foreach my $key (keys %$meta) {
         my $hash = $meta->{$key};
         my $join_class = $hash->{'join_class'};
@@ -82,9 +131,10 @@ sub full_meta {
             $join_class->full_meta;
         };
         my $join_key = $hash->{'join_key'} ||= do {
-            my $_key = $join_meta->{$key} or do {
+            my $_key = $join_meta->{$key};
+            unless($_key) {
                 my $join_table = $join_class->table.'_';
-                $key =~ m/^$join_table(\w+)$/ ? $1 : throw "Regex mismatch";
+                $_key = $key =~ m/^$join_table(\w+)$/ ? $1 : throw "Regex mismatch";
             };
             throw "Meta key not found in $join_class: $key" unless $_key;
             $_key;
@@ -106,12 +156,15 @@ sub require_class {
     return $class;
 }
 
-sub build_create_schema {
+sub create_table_sql {
     my $self = shift;
 
-    my %fkey;
-    my $table  = $self->table;
-    my $schema = "CREATE TABLE $table ( id INT NOT NULL AUTO_INCREMENT,";
+    my %ftables;
+    my $table   = $self->table;
+    my $db_type = 'sqlite'; # TODO put this as a config
+    my $schema  = $db_type eq 'sqlite'
+                ? "CREATE TABLE $table ( id INT,"
+                : "CREATE TABLE $table ( id INT NOT NULL AUTO_INCREMENT,";
     my $meta = $self->full_meta;
     foreach my $col (keys %$meta) {
         my $hash = $meta->{$col};
@@ -127,10 +180,14 @@ sub build_create_schema {
         $schema .= ',';
         if(my $join_class = $hash->{'join_class'}) {
             my $ftable = $join_class->table;
-            $fkey{$ftable} = 1;
+            $ftables{$ftable} = [$col, $hash->{'join_key'}];
         }
     }
-    $schema .= " CONSTRAINT pk_$table\_id PRIMARY KEY (id),";
+    $schema .= " CONSTRAINT pk_$table\_id PRIMARY KEY (id),";# unless $db_type eq 'sqlite';
+    foreach my $ftable (keys %ftables) {
+        my ($col, $fkey) = @{$ftables{$ftable}};
+        $schema .= " CONSTRAINT fk_$table\_$ftable FOREIGN KEY ($col) REFERENCES $ftable($fkey),";
+    }
     $schema =~ s/,$//; # Remove any trailing comma to avoid SQL syntax errors
     $schema .= ');';
 
@@ -209,6 +266,22 @@ sub set_info should be used instead to access that information.
 Used to return object data to clients using the API.
 By default, returns the info hashref.
 Can be overridden in subclass to customize what should be returned to clients.
+
+=head2 create
+
+Inserts the record into the database.
+
+=head2 update
+
+Updates the record.
+
+=head2 delete
+
+Deletes the record.
+
+=head2 dbh
+
+Returns the datbase handle
 
 =head2 full_meta
 
