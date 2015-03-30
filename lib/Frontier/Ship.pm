@@ -2,6 +2,7 @@ package Frontier::Ship;
 
 use strict;
 use warnings;
+use base 'Frontier::Obj';
 
 sub table { 'ship' }
 

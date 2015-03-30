@@ -2,6 +2,7 @@ package Frontier::ShipStats;
 
 use strict;
 use warnings;
+use base 'Frontier::Obj';
 
 sub table { 'ship_stats' }
 

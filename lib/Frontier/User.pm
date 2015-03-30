@@ -7,7 +7,7 @@ use base 'Frontier::Obj';
 sub table { 'user' }
 
 sub meta {
-    return shift->{
+    return {
         name => {
             desc => 'Username',
         },
