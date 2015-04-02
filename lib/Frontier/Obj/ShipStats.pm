@@ -5,10 +5,11 @@ use warnings;
 use base 'Frontier::Obj';
 
 sub table { 'ship_stats' }
+sub pk_name { 'ship_id' }
 
 sub meta {
     return {
-        id => {
+        ship_id => {
             join_class => 'Frontier::Obj::Ship',
         },
         hull => {
