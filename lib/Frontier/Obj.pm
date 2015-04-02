@@ -8,6 +8,8 @@ use Throw qw(throw);
 sub table { throw 'table not overridden' }
 sub meta  { throw 'meta not overridden' }
 
+sub pk_name { 'id' }
+
 sub new {
     my $proto = shift;
     my $args  = shift || { };
@@ -15,7 +17,8 @@ sub new {
     unless(ref $args) {
         my $id = $args;
         my $table = $proto->table;
-        my $row = $proto->dbh->selectrow_hashref("SELECT * FROM $table WHERE id = ?", { }, $id);
+        my $pk_name = $proto->pk_name; # TODO use dbi->quote_identifier
+        my $row = $proto->dbh->selectrow_hashref("SELECT * FROM $table WHERE $pk_name = ?", { }, $id);
         throw "$table not found" unless $row;
         $args = { info => $row };
     }
@@ -34,7 +37,7 @@ sub new {
 
 sub id {
     my $self = shift;
-    return $self->get_info('id');
+    return $self->get_info($self->pk_name);
 }
 
 sub info {
@@ -87,7 +90,7 @@ sub create {
     my $sql = "INSERT INTO $table (".join(',',@cols).') VALUES ('.join(',',@hold).')';
     $self->dbh->do($sql, { }, @vals);
 
-    my $id = $self->dbh->last_insert_id(undef, undef, $table, 'id');
+    my $id = $self->dbh->last_insert_id(undef, undef, $table, $self->pk_name);
     $self->set('info', $self->new($id)->info);
 
     return $self;
@@ -117,9 +120,10 @@ sub full_meta {
     my %join;
     my $meta = $self->meta;
 
-    $meta->{'id'} = {
-        desc => 'Primary key for '.$self->table,
-    };
+    my $pk_name = $self->pk_name;
+    my $pk = $meta->{$pk_name} ||= { };
+    $pk->{'desc'} = 'Primary key for '.$self->table unless exists $pk->{'desc'};
+    $pk->{'type'} = 'UINT' unless exists $pk->{'type'};
 
     foreach my $key (keys %$meta) {
         my $hash = $meta->{$key};
@@ -161,11 +165,10 @@ sub create_table_sql {
 
     my %ftables;
     my $table   = $self->table;
+    my $pk_name = $self->pk_name;
+    my $meta    = $self->full_meta;
     my $db_type = 'sqlite'; # TODO put this as a config
-    my $schema  = $db_type eq 'sqlite'
-                ? "CREATE TABLE $table ( id INT,"
-                : "CREATE TABLE $table ( id INT NOT NULL AUTO_INCREMENT,";
-    my $meta = $self->full_meta;
+    my $schema  = "CREATE TABLE $table (";
     foreach my $col (keys %$meta) {
         my $hash = $meta->{$col};
         $schema .= " $col";
@@ -177,13 +180,16 @@ sub create_table_sql {
             $schema .= ' VARCHAR(80)';
         }
         $schema .= ' NOT NULL' if $hash->{'required'};
+        if($col eq $pk_name) {
+            $schema .= $db_type eq 'mysql' ? ' AUTO_INCREMENT' : $db_type eq 'postgresql' ? 'SERIAL' : '';
+        }
         $schema .= ',';
         if(my $join_class = $hash->{'join_class'}) {
             my $ftable = $join_class->table;
             $ftables{$ftable} = [$col, $hash->{'join_key'}];
         }
     }
-    $schema .= " CONSTRAINT pk_$table\_id PRIMARY KEY (id),";# unless $db_type eq 'sqlite';
+    $schema .= " CONSTRAINT pk_$table\_$pk_name PRIMARY KEY ($pk_name),";
     foreach my $ftable (keys %ftables) {
         my ($col, $fkey) = @{$ftables{$ftable}};
         $schema .= " CONSTRAINT fk_$table\_$ftable FOREIGN KEY ($col) REFERENCES $ftable($fkey),";
@@ -218,6 +224,10 @@ Intended to be overridden in sub class to return the table name of the object.
 
 Intended to be overridden in sub class to return a hashref.
 Used to supply API validation and how to interface with the database table.
+
+=head2 pk_name
+
+Returns the name of the primary key field. By default, this is "id". Can be overridden in sub class to be different.
 
 =head2 new
 
