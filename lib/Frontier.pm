@@ -2,6 +2,7 @@ package Frontier;
 
 use strict;
 use warnings;
+use base qw(Respite::Base Frontier::API);
 
 1;
 
