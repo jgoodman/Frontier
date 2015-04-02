@@ -1,0 +1,11 @@
+#!/usr/bin/perl
+use lib qw(../lib ./lib);
+use lib qw(../lib);
+use Respite::Server;
+Respite::Server->run_commandline(
+    dispatch_class => 'Frontier',
+    port => 50443,
+    user           => 'jter',
+    group          => 'jter',
+);
+
