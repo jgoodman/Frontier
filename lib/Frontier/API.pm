@@ -4,12 +4,93 @@ use strict;
 use warnings;
 use Throw qw(throw);
 
-sub __scan {
-    my ($self, $args) = @_;
+sub __do_multi__meta {
     return {
-        msg         => 'hello from frontier',
-        server_time => time(),
+        desc => 'Cut down on latency by batching calls, they are run in the order you send',
+        args => {
+            calls => [{method=>'see individual methods for meta details'}],
+        },
+        resp => {
+            calls => [{method=>'see individual methods for meta details'}],
+        },
+    };
+}
+sub __do_multi {
+    my ($self,$args) = @_;
+    my $ret = {};
+    foreach my $call (@{$args->{'calls'}}) {
+        my $method = [keys %$call]->[0];
+        my $args = $call->{$method};
+        $args = ref $args eq 'HASH' ? $args : {};
+        my $resp = eval{$self->run_method($method,$args)} || $@;
+        push @{$ret->{'calls'}}, {$method => $resp};
     }
+    return $ret;
+}
+
+sub __scan__meta {
+    return {
+        desc => 'Performs a short range scan, giving details about nearby objects in play.',
+        ship_status => {
+            cached => 1, # TODO number of seconds to cache this result per ship
+            energy => 0, # TODO how much is deducted or added for a non-cached call to this method
+            hull   => 0, # TODO how much is deducted or added for a non-cached call to this method
+            shield => 0, # TODO how much is deducted or added for a non-cached call to this method
+        },
+        args => {},
+        resp => {
+            obj => {
+                id => {
+                    id => 'object id, listed again for convenience',
+                    img => 'Image to display for this object',
+                    scale => 'Size to display the img. 1 = 100%',
+                    type => ['ship','projectile','beam'],
+                    team => 'Which team is this object from.  Helpful to detect friend or foe',
+                    obj_direction => 'The direction the object is compared to you',
+                    x => 'coordinate',
+                    y => 'coordinate',
+                    shield => 'Amount remaining from 0% - 100%',
+                    hull => 'Amount remaining from 0% - 100%',
+                    energy => 'Amount remaining from 0% - 100%',
+                    move_radians => 'The direction the object is moving',
+                    obj_radians => 'The direction the object is facing',
+                    obj_speed => 'The speed the object is moving',
+                },
+            },
+            msg => ['a list of recent messages, if any'],
+        },
+    };
+}
+
+sub __scan {
+    my ($self, $args, $is_long) = @_;
+
+    #require Frontier::Mock;
+    #my $obj = Frontier::Mock::mocked();
+    my $obj = {0=>{id=>0,x=>1}};
+
+    my $obj_ret;
+    foreach my $id (keys %$obj) {
+        $obj_ret->{$_} = $obj->{$id}->{$_} foreach ('id','img','scale','type','team','obj_direction');
+        $obj_ret->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('x','y','shield','hull','energy','move_radians','obj_radians','obj_speed');
+    }
+
+    return {
+        obj => $obj_ret,
+        msg => ['hello from frontier '.time()],
+    }
+}
+
+sub __scan_long__meta {
+    my $self = shift;
+    my $ret = $self->__scan__meta(@_);
+    $ret->{'ship_status'}->{'energy'} = '-1TODO'; #$self->my->scanner->energy; # TODO calculated from ship stats
+    $ret;
+}
+
+sub __scan_long {
+    my ($self,$args) = @_;
+    $self->__scan($args,1);
 }
 
 sub obj_class {
