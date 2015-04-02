@@ -1,4 +1,4 @@
-package Test::Frontier::User;
+package Test::Frontier::Obj::Ship;
 
 use strict;
 use warnings;
@@ -10,7 +10,7 @@ __END__
 
 =head1 NAME
 
-Test::Frontier::User - Unit Tests for Frontier::User module
+Test::Frontier::Obj::Ship - Unit Tests for Frontier::Ship module
 
 =head1 TEST_METHODS
 

@@ -2,7 +2,7 @@ package Frontier::API::Ship;
 
 use strict;
 use warnings;
-use Frontier::Ship;
+use Frontier::Obj::Ship;
 use base 'Frontier::API';
 
 sub __ship_info__meta {
@@ -16,8 +16,7 @@ sub __ship_info__meta {
 sub __ship_info {
     my ($self, $args) = @_;
     $self->validate_args($args);
-    my $ship = Frontier::Ship->new;
-    return $ship->stats;
+    return Frontier::Obj::Ship->new($args->{'id'})->pretty;
 }
 
 1;

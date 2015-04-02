@@ -1,18 +1,16 @@
-package Frontier::Ship;
+package Frontier::Obj::Ship;
 
 use strict;
 use warnings;
+use base 'Frontier::Obj';
 
 sub table { 'ship' }
 
 sub meta {
     return {
-        user_id => {
-            join_class => 'Frontier::User',
-        },
         name => {
             desc => 'Ship name',
-        }
+        },
     }
 }
 
@@ -22,7 +20,7 @@ __END__
 
 =head1 NAME
 
-Frontier::Ship
+Frontier::Obj::Ship
 
 =head1 SYNOPSIS
 
@@ -33,9 +31,5 @@ This module abstracts a ship
 =head2 new
 
 Constructor method which initializes stats for the ship object.
-
-=head2 stats
-
-Returns a Frontier::ShipStats object pertaining to the Frontier::Ship object.
 
 =cut

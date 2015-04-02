@@ -1,14 +1,15 @@
-package Frontier::ShipStats;
+package Frontier::Obj::ShipStats;
 
 use strict;
 use warnings;
+use base 'Frontier::Obj';
 
 sub table { 'ship_stats' }
 
 sub meta {
     return {
-        ship_id => {
-            join_class => 'Frontier::Ship',
+        id => {
+            join_class => 'Frontier::Obj::Ship',
         },
         hull => {
             desc    => 'Hull',
@@ -34,7 +35,7 @@ __END__
 
 =head1 NAME
 
-Frontier::ShipStats
+Frontier::Obj::ShipStats
 
 =head1 SYNOPSIS
 

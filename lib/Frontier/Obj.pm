@@ -2,6 +2,7 @@ package Frontier::Obj;
 
 use strict;
 use warnings;
+use Data::Dumper;
 use Throw qw(throw);
 
 sub table { throw 'table not overridden' }
@@ -9,19 +10,21 @@ sub meta  { throw 'meta not overridden' }
 
 sub new {
     my $proto = shift;
-    my $args  = shift;
+    my $args  = shift || { };
 
     unless(ref $args) {
-        #TODO: We are assuming this is the id. Code out a lookup
-        $args = { id => $args->{'id'} };
+        my $id = $args;
+        my $table = $proto->table;
+        my $row = $proto->dbh->selectrow_hashref("SELECT * FROM $table WHERE id = ?", { }, $id);
+        throw "$table not found" unless $row;
+        $args = { info => $row };
     }
 
     my $class = ref $proto || $proto;
     my $self  = bless $args, $class;
 
     my $info  = $self->info;
-    my $meta  = $self->meta;
-    $meta->{'id'} //= { }; # Allow for universal id
+    my $meta  = $self->full_meta;
     my @bad_keys;
     foreach my $key (%$info) { push @bad_keys, $key unless exists $meta->{$key} }
     throw 'bad keys supplied for info: '.join(', ', @bad_keys) if scalar @bad_keys;
@@ -67,26 +70,124 @@ sub set {
 
 sub pretty { return shift->info }
 
-sub build_create_schema {
+sub create {
     my $self = shift;
 
-    my $table  = $self->table;
-    my $schema = "CREATE TABLE $table ( id int NOT NULL AUTO_INCREMENT,";
+    my @cols;
+    my @hold;
+    my @vals;
+    my $info = $self->info;
+    foreach my $col (keys %$info) {
+        push @cols, $col;
+        push @hold, '?';
+        push @vals, $info->{$col};
+    }
+
+    my $table = $self->table;
+    my $sql = "INSERT INTO $table (".join(',',@cols).') VALUES ('.join(',',@hold).')';
+    $self->dbh->do($sql, { }, @vals);
+
+    my $id = $self->dbh->last_insert_id(undef, undef, $table, 'id');
+    $self->set('info', $self->new($id)->info);
+
+    return $self;
+}
+
+sub update {
+    my $self = shift;
+    throw 'update method not yet implemented'; # TODO
+    return $self;
+}
+
+sub delete {
+    my $self = shift;
+    throw 'update method not yet implemented'; # TODO
+    return $self;
+}
+
+our $DBH;
+sub dbh {
+    my $self = shift;
+    return $DBH ||= DBI->connect("dbi:SQLite:dbname=frontier.db","","");
+}
+
+sub full_meta {
+    my $self = shift;
+
+    my %join;
     my $meta = $self->meta;
-    foreach my $col (keys %$meta) {
-        my $hash = $meta->{$col};
-        $schmea .= " $col";
-        if($hash->{'join_class'}) {
-            # TODO code out joins
-        }
-        if(my $type = $hash->{'type'}) {
-            if uc($type) eq 'UINT'
-        }
-        else {
-            $schema
+
+    $meta->{'id'} = {
+        desc => 'Primary key for '.$self->table,
+    };
+
+    foreach my $key (keys %$meta) {
+        my $hash = $meta->{$key};
+        my $join_class = $hash->{'join_class'};
+        next unless $join_class;
+        my $join_meta = $join{$join_class} ||= do {
+            $self->require_class($join_class);
+            # TODO: We need to prevent circular referencing somehow
+            $join_class->full_meta;
+        };
+        my $join_key = $hash->{'join_key'} ||= do {
+            my $_key = $join_meta->{$key};
+            unless($_key) {
+                my $join_table = $join_class->table.'_';
+                $_key = $key =~ m/^$join_table(\w+)$/ ? $1 : throw "Regex mismatch";
+            };
+            throw "Meta key not found in $join_class: $key" unless $_key;
+            $_key;
+        };
+        my $join_hash = $join_meta->{$join_key};
+        foreach my $k (keys %$join_hash) {
+            $hash->{$k} = $join_hash->{$k} unless exists $hash->{$k};
         }
     }
-    $schema .= " CONSTRAINT pk_$table\_id PRIMARY KEY (id),";
+    return $meta;
+}
+
+sub require_class {
+    my $self  = shift;
+    my $class = shift or throw 'class undef';
+    my $file  = "$class.pm";
+    $file =~ s/::/\//g;
+    require $file;
+    return $class;
+}
+
+sub create_table_sql {
+    my $self = shift;
+
+    my %ftables;
+    my $table   = $self->table;
+    my $db_type = 'sqlite'; # TODO put this as a config
+    my $schema  = $db_type eq 'sqlite'
+                ? "CREATE TABLE $table ( id INT,"
+                : "CREATE TABLE $table ( id INT NOT NULL AUTO_INCREMENT,";
+    my $meta = $self->full_meta;
+    foreach my $col (keys %$meta) {
+        my $hash = $meta->{$col};
+        $schema .= " $col";
+        if(my $type  = $hash->{'type'}) {
+            $schema .= ' INT' if uc($type) eq 'UINT';
+        }
+        else {
+            # TODO code out max_len and min_len;
+            $schema .= ' VARCHAR(80)';
+        }
+        $schema .= ' NOT NULL' if $hash->{'required'};
+        $schema .= ',';
+        if(my $join_class = $hash->{'join_class'}) {
+            my $ftable = $join_class->table;
+            $ftables{$ftable} = [$col, $hash->{'join_key'}];
+        }
+    }
+    $schema .= " CONSTRAINT pk_$table\_id PRIMARY KEY (id),";# unless $db_type eq 'sqlite';
+    foreach my $ftable (keys %ftables) {
+        my ($col, $fkey) = @{$ftables{$ftable}};
+        $schema .= " CONSTRAINT fk_$table\_$ftable FOREIGN KEY ($col) REFERENCES $ftable($fkey),";
+    }
     $schema =~ s/,$//; # Remove any trailing comma to avoid SQL syntax errors
     $schema .= ');';
 
@@ -165,6 +266,31 @@ sub set_info should be used instead to access that information.
 Used to return object data to clients using the API.
 By default, returns the info hashref.
 Can be overridden in subclass to customize what should be returned to clients.
+
+=head2 create
+
+Inserts the record into the database.
+
+=head2 update
+
+Updates the record.
+
+=head2 delete
+
+Deletes the record.
+
+=head2 dbh
+
+Returns the datbase handle
+
+=head2 full_meta
+
+Calls $self->meta and loops through the keys.
+If "join_class" is found, it will inherit the hashref from the foriegn class.
+
+=head2 require_class
+
+Helper method to load another module
 
 =head2 build_create_schema
 

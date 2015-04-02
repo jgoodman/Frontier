@@ -1,4 +1,4 @@
-package Test::Frontier::ShipStats;
+package Test::Frontier::Obj::ShipStats;
 
 use strict;
 use warnings;
@@ -10,7 +10,7 @@ __END__
 
 =head1 NAME
 
-Test::Frontier::ShipStats - Unit Tests for Frontier::ShipStats module
+Test::Frontier::Obj::ShipStats - Unit Tests for Frontier::ShipStats module
 
 =head1 TEST_METHODS
 
