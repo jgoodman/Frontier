@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 25;
+use Test::More tests => 27;
 
 # Libraries for Testing
 # TODO: Move below into make file
@@ -33,9 +33,11 @@ require_ok('Frontier::API::ShipStats');
 require_ok('Frontier::Obj');
 require_ok('Frontier::Obj::Ship');
 require_ok('Frontier::Obj::ShipStats');
+require_ok('Frontier::Obj::UpgradeJournal');
 require_ok('Test::Frontier::API');
 require_ok('Test::Frontier::API::Ship');
 require_ok('Test::Frontier::API::ShipStats');
 require_ok('Test::Frontier::Obj');
 require_ok('Test::Frontier::Obj::Ship');
 require_ok('Test::Frontier::Obj::ShipStats');
+require_ok('Test::Frontier::Obj::UpgradeJournal');
