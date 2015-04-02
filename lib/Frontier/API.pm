@@ -3,13 +3,8 @@ package Frontier::API;
 use strict;
 use warnings;
 use Throw qw(throw);
-use base 'Respite::Base';
 
-sub api_meta {
-    return shift->{'api_meta'} ||= { lib_dirs  => 1 };
-}
-
-sub __hello {
+sub __scan {
     my ($self, $args) = @_;
     return {
         msg         => 'hello from frontier',
