@@ -28,16 +28,80 @@ sub __do_multi {
     return $ret;
 }
 
+sub __new_board__meta {
+    my ($self,$args) = @_;
+    return {
+        desc => 'Start a new game board',
+        args => {
+            board_pass => {
+                desc => 'The new password all ships will need to connect to this board',
+                type=>'STRING',
+                required => 1,
+            },
+        },
+        resp => {
+        },
+    };
+}
+
+sub __new_board {
+    my ($self,$args) = @_;
+    {TODO=>1};
+}
+
+sub __new_ship__meta {
+    my ($self,$args) = @_;
+    return {
+        desc => 'Create a new ship',
+        args => {
+            ship_id => {
+                type=>'UINT',
+                required => 1,
+            },
+            ship_pass => {
+                desc => 'The password used when performing any ship action',
+                type=>'STRING',
+                required => 1,
+            },
+            board_pass => {
+                desc => 'The new password all ships will need to connect to this board',
+                type=>'STRING',
+                required => 1,
+            },
+        },
+        resp => {
+        },
+    };
+}
+
+sub __new_ship {
+    my ($self,$args) = @_;
+    {TODO=>1};
+}
+
 sub __scan__meta {
     return {
         desc => 'Performs a short range scan, giving details about nearby objects in play.',
-        ship_status => {
+        cacheable => {
             cached => 1, # TODO number of seconds to cache this result per ship
+            key => [], # args to use as a cache key
+        },
+        ship_status => {
             energy => 0, # TODO how much is deducted or added for a non-cached call to this method
             hull   => 0, # TODO how much is deducted or added for a non-cached call to this method
             shield => 0, # TODO how much is deducted or added for a non-cached call to this method
         },
-        args => {},
+        args => {
+            ship_id => {
+                type=>'UINT',
+                required => 1,
+            },
+            ship_pass => {
+                desc => 'The password used when performing any ship action',
+                type=>'STRING',
+                required => 1,
+            },
+        },
         resp => {
             obj => {
                 id => {
@@ -84,6 +148,7 @@ sub __scan {
 sub __scan_long__meta {
     my $self = shift;
     my $ret = $self->__scan__meta(@_);
+    $ret->{'desc'} = 'Performs a long range scan, giving basic info for objects beyond the short range scanners range.',
     $ret->{'ship_status'}->{'energy'} = '-1TODO'; #$self->my->scanner->energy; # TODO calculated from ship stats
     $ret;
 }

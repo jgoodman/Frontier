@@ -12,6 +12,7 @@ Respite::CommandLine->run({
         brand   => 'test',
         pass    => '-',
         port    => 50443,
+no_ssl => 1,
     },
 });
 

@@ -5,6 +5,7 @@ use Respite::Server;
 Respite::Server->run_commandline(
     dispatch_class => 'Frontier',
     port => 50443,
+no_ssl => 1,
     user           => 'jter',
     group          => 'jter',
 );
