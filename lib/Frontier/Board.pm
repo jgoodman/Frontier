@@ -25,7 +25,10 @@ sub __new__meta {
 
 sub __new {
     my ($self,$args) = @_;
-    {TODO=>1};
+
+    $args->{'board_id'} = 123; # TODO make a board
+
+    $self->__info($args);
 }
 
 sub __info__meta {
