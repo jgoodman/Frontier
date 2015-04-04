@@ -25,7 +25,7 @@ sub __new {
 
     $args->{'ship_id'} = 123; # TODO make the ship
 
-    $self->run_method('ship_info',$args);
+    $self->__info($args);
 }
 
 sub __info__meta {
@@ -96,7 +96,7 @@ sub __repair_hull__meta {
     };
 }
 
-sub __repair_shield {
+sub __repair_hull {
     my ($self,$args) = @_;
     {TODO=>1};
 }
@@ -125,32 +125,6 @@ sub __repair_shield__meta {
 }
 
 sub __repair_shield {
-    my ($self,$args) = @_;
-    {TODO=>1};
-}
-
-sub __navigation__meta {
-    my ($self,$args) = @_;
-    return {
-        desc => 'Turn ship and thrust/engine power',
-        ship_status => {
-            energy => 0, # TODO how much is deducted or added for a non-cached call to this method
-            hull   => 0, # TODO how much is deducted or added for a non-cached call to this method
-            shield => 0, # TODO how much is deducted or added for a non-cached call to this method
-        },
-        args => {
-            ship_id => $Frontier::MetaCommon::args->{'ship_id'},
-            ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
-            ship_radians => {desc=>'TODO'},
-            ship_engine_power => {desc=>'TODO'},
-        },
-        resp => {
-            TODO => 1,
-        },
-    };
-}
-
-sub __navigation {
     my ($self,$args) = @_;
     {TODO=>1};
 }
