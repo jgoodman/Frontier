@@ -51,11 +51,13 @@ my $args = {};
 GetOptions (
 "b|board=s" => \$args->{'ship'}->{'board_name'},
 "p|pass|password=s" => \$args->{'ship'}->{'board_pass'},
+"s|ship|ship_name=s" => \$args->{'ship'}->{'ship_name'},
+"ship_pass=s" => \$args->{'ship'}->{'ship_name'},
 "m|module=s" => \$args->{'module'},
 "d|daemonize" => \$args->{'daemonize'},
 "h|help" => \$args->{'help'},
 ) or pod2usage(2);
-pod2usage(1) if $args->{'help'};
+pod2usage(1) if $args->{'help'} || !$args->{'ship'}->{'board_name'} || !$args->{'ship'}->{'board_pass'} || !$args->{'module'};
 
 $args->{'module'} = "Frontier::ShipAI::".$args->{'module'};
 eval('require '.$args->{'module'}.';') or die 'Could not load module: '.$args->{'module'}."\n".$@;
