@@ -5,14 +5,6 @@ use lib qw(../lib ./lib);
 
 use Respite::CommandLine;
 Respite::CommandLine->run({
-    api_meta => {
-        remote  => 1, # will use Repsite::Client
-        service => 'frontier',
-        host    => 'localhost',
-        brand   => 'test',
-        pass    => '-',
-        port    => 50443,
-no_ssl => 1,
-    },
+    api_meta => 'Frontier',
 });
 

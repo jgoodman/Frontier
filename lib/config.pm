@@ -15,7 +15,23 @@ sub new {
 
 sub load {
     $config->{'no_brand'} = 1;
+    $config->{'frontier_service'} = {
+        remote => 1,
+        host   => 'localhost',
+        brand  => 'test',
+        pass   => '-',
+        port   => 50443,
+        no_ssl => 1,
+        user   => 'jter',
+        group  => 'jter',
+    };
     $config;
 }
+
+sub config {
+    return $config;
+}
+
+config::load();
 
 1;
