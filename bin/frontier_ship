@@ -1,0 +1,90 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Proc::Daemon;
+use Log::Dispatch;
+use Getopt::Long;
+use Pod::Usage;
+use Data::Dumper;
+use Time::HiRes qw(sleep);
+use PerlIO::tee; # allow me to redirect "print" to the log file
+
+=head1 NAME
+
+frontier_ship - easily daemonize a ship
+
+=head1 SYNOPSIS
+
+Deamonize a Frontier::ShipAI script.
+
+./bin/frontier_ship -b board123 -p pass123 -m Orbiter -d
+
+=head1 OPTIONS
+
+=over 4
+
+=item -h,--help
+
+This help file
+
+=item -d,--daemonize
+
+By default this script does not daemonize.  However if you wish, you can.
+
+=item -b,--board
+
+The board you need to connect to.
+
+=item -p,--pass,--password,--board_pass
+
+The password needed to connect to the board.
+
+=item -m,--module
+
+The Frontier::ShipAI module you wish to load.  For example if you use "-m Orbiter" then the package Frontier::ShipAI::Orbiter would be loaded.
+
+=back
+
+=cut
+
+my $args = {};
+GetOptions (
+"b|board=s" => \$args->{'ship'}->{'board_name'},
+"p|pass|password=s" => \$args->{'ship'}->{'board_pass'},
+"m|module=s" => \$args->{'module'},
+"d|daemonize" => \$args->{'daemonize'},
+"h|help" => \$args->{'help'},
+) or pod2usage(2);
+pod2usage(1) if $args->{'help'};
+
+$args->{'module'} = "Frontier::ShipAI::".$args->{'module'};
+eval('require '.$args->{'module'}.';') or die 'Could not load module: '.$args->{'module'}."\n".$@;
+die 'Method main() not found in module: '.$args->{'module'}."\n" unless $args->{'module'}->can('main');
+die 'Method new() not found in module: '.$args->{'module'}."\n" unless $args->{'module'}->can('new');
+
+Proc::Daemon::Init() if $args->{'daemonize'};
+my $log = Log::Dispatch->new(
+    outputs => [
+        [ 'File',   min_level => 'info', filename => '/home/jter/Frontier/logfile' ],
+        [ 'Screen', min_level => 'warning' ],
+    ],
+);
+*STDOUT->push_layer(tee => [$log->outputs()]->[1]->{'fh'}); # copy print to the log
+
+$log->warning('My pid: '.$$."\n");
+$log->warning("Starting time: ".time()."\n");
+
+my $keep_going = 1;
+$SIG{HUP}  = sub { $log->warning("Caught SIGHUP: exiting gracefully\n"); $keep_going = 0; };
+$SIG{INT}  = sub { $log->warning("Caught SIGINT: exiting gracefully\n"); $keep_going = 0; };
+$SIG{QUIT} = sub { $log->warning("Caught SIGQUIT: exiting gracefully\n"); $keep_going = 0; };
+$SIG{TERM} = sub { $log->warning("Caught SIGTERM: exiting gracefully\n"); $keep_going = 0; };
+$SIG{__WARN__} = \&sig_warn;
+sub sig_warn { $log->warning(@_); }
+
+my $ship = $args->{'module'}->new($args->{'ship'});
+while ($keep_going && $ship->main_keep_going()) {
+    $ship->main();
+    sleep $ship->can('main_sleep') ? $ship->main_sleep() : 1;
+}
+$log->warning("Stopping time: ".time()."\n");

@@ -2,11 +2,10 @@
 use lib qw(../lib ./lib);
 use lib qw(../lib);
 use Respite::Server;
+use config;
+
 Respite::Server->run_commandline(
     dispatch_class => 'Frontier',
-    port => 50443,
-no_ssl => 1,
-    user           => 'jter',
-    group          => 'jter',
+    %{config::config->{'frontier_service'}},
 );
 

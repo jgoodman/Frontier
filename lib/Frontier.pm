@@ -37,18 +37,20 @@ sub run_method {
     my $args = shift;
     my $meta;
     my $cache_key;
-    if ($method !~ /__meta$/ && !($method ~~ ['methods','hello','new_board','new_ship'])) {
-        $self->check_permissions($method,$args,$meta); # do this first, so we can setup your ship
+    if ($method !~ /__meta$/) {
+        $self->check_permissions($method,$args,$meta) unless $method ~~ ['methods','hello','board_new','ship_new'];
         my $code = $self->find_method($method.'__meta');
-        $meta = $self->$code();
-        $self->validate_args($args,$meta->{'args'});
-        if ($meta->{'cacheable'}) {
-            $cache_key = $method;
-            $cache_key .= ':'.$args->{$_} foreach @{$meta->{'cacheable'}->{'key'}};
-            $cache_key =~ s/_//g; # for some reason memcache does not like _
-            my $cached = $self->memd->get($cache_key);
-            return $cached if $cached && ($args->{'cached'} || time - $cached->{'_cached'} <= $meta->{'cacheable'}->{'cached'});
-            return {} if $args->{'cached'} && $args->{'cached'} eq 'forced';
+        if ($code) {
+            $meta = $self->$code();
+            $self->validate_args($args,$meta->{'args'});
+            if ($meta->{'cacheable'}) {
+                $cache_key = $method;
+                $cache_key .= ':'.$args->{$_} foreach @{$meta->{'cacheable'}->{'key'}};
+                $cache_key =~ s/_//g; # for some reason memcache does not like _
+                my $cached = $self->memd->get($cache_key);
+                return $cached if $cached && ($args->{'cached'} || time - $cached->{'_cached'} <= $meta->{'cacheable'}->{'cached'});
+                return {} if $args->{'cached'} && $args->{'cached'} eq 'forced';
+            }
         }
     }
     my $ret = eval{$self->SUPER::run_method($method,$args,@_)} || $@;
@@ -67,6 +69,7 @@ sub check_permissions {
     my ($self,$method,$args,$meta) = @_;
     throw 'permission denied', {ship_id=>$args->{'ship_id'}} unless $args->{'ship_id'} && $args->{'ship_pass'};
     # TODO check database to make sure ship_pass matches ship_id
+    # TODO make sure $self->api_brand matches the board_name
     $self->{'ship_id'} = $args->{'ship_id'};
 }
 
