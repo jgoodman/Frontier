@@ -15,8 +15,7 @@ sub new {
     $self->{'ship_name'} = $args->{'ship_name'};
     $self->{'ship_pass'} = $args->{'ship_pass'};
     my $ship_data = $self->call(ship_new=>$args);
-    warn "Ship name: ".$self->{'ship_name'}."\n";
-    warn "Ship pass: ".$self->{'ship_pass'}."\n";
+    $self->{'ship_id'} = $ship_data->{'ship_id'};
     return $self;
 }
 
@@ -30,6 +29,7 @@ sub call {
     my ($self,$method,$args) = @_;
     $args->{'ship_pass'} //= $self->{'ship_pass'};
     $args->{'ship_name'} //= $self->{'ship_name'};
+    $args->{'ship_id'} //= $self->{'ship_id'};
     my $data = $self->frontier->run_method($method => $args);
     die $data unless $data;
     $data->data;
