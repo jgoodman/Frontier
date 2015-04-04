@@ -44,7 +44,7 @@ sub __info__meta {
 
 sub __info {
     my ($self,$args) = @_;
-    {TODO=>1};
+    {TODO=>1,ship_id=>$args->{'ship_id'}};
 }
 
 sub __navigation__meta {

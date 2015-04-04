@@ -62,17 +62,27 @@ eval('require '.$args->{'module'}.';') or die 'Could not load module: '.$args->{
 die 'Method main() not found in module: '.$args->{'module'}."\n" unless $args->{'module'}->can('main');
 die 'Method new() not found in module: '.$args->{'module'}."\n" unless $args->{'module'}->can('new');
 
+my $ship = $args->{'module'}->new($args->{'ship'});
+if (!$args->{'logfilename'}) {
+    $args->{'logfilename'} = '/var/log/frontier_server/'.$ship->{'ship_name'}.'_board:'.$ship->{'board_name'}.'_ship_id:'.$ship->{'ship_id'};
+}
+
 Proc::Daemon::Init() if $args->{'daemonize'};
+
 my $log = Log::Dispatch->new(
     outputs => [
-        [ 'File',   min_level => 'info', filename => '/home/jter/Frontier/logfile' ],
-        [ 'Screen', min_level => 'warning' ],
+        [ 'File',   min_level => 'info', filename => $args->{'logfilename'} ],
+        [ 'Screen', min_level => 'info' ],
     ],
 );
 *STDOUT->push_layer(tee => [$log->outputs()]->[1]->{'fh'}); # copy print to the log
 
-$log->warning('My pid: '.$$."\n");
-$log->warning("Starting time: ".time()."\n");
+$log->info('My pid: '.$$."\n");
+$log->info("Starting time: ".time()."\n");
+$log->info("Board name: ".$ship->{'board_name'}."\n");
+$log->info("Ship name: ".$ship->{'ship_name'}."\n");
+$log->info("Ship id: ".$ship->{'ship_id'}."\n");
+$log->info("Ship pass: ".$ship->{'ship_pass'}."\n");
 
 my $keep_going = 1;
 $SIG{HUP}  = sub { $log->warning("Caught SIGHUP: exiting gracefully\n"); $keep_going = 0; };
@@ -82,9 +92,8 @@ $SIG{TERM} = sub { $log->warning("Caught SIGTERM: exiting gracefully\n"); $keep_
 $SIG{__WARN__} = \&sig_warn;
 sub sig_warn { $log->warning(@_); }
 
-my $ship = $args->{'module'}->new($args->{'ship'});
 while ($keep_going && $ship->main_keep_going()) {
     $ship->main();
     sleep $ship->can('main_sleep') ? $ship->main_sleep() : 1;
 }
-$log->warning("Stopping time: ".time()."\n");
+$log->info("Stopping time: ".time()."\n");
