@@ -8,7 +8,7 @@ use base 'Test::Frontier::API';
 
 sub __ship_info : Test(1) {
     my $self = shift;
-    my $resp = $self->client->ship_info;
+    my $resp = $self->client->ship_info({ship_id=>1,ship_pass=>1});
     cmp_deeply($resp, {id => 1, name => 'foo ship-name1'}, 'Call api method "ship_info"') or diag(explain($resp));
 }
 

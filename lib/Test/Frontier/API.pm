@@ -44,7 +44,7 @@ sub startup : Test(startup => +6) {
 
     my ($client, $server) = setup_test_server({
         service  => 'frontier_test',
-        api_meta => 'Frontier::API',
+        api_meta => 'Frontier',
         flat     => 1,
         client_utf8_encoded => 1,
         no_ssl => 1,
@@ -59,7 +59,7 @@ sub __hello : Test(1) {
     my $resp = $self->client->hello;
     cmp_deeply(
         $resp,
-        { msg => 'hello from frontier', server_time => re('^\d+$') },
+        { _cached=>0,api_brand=>'unittest',api_ip=>'127.0.0.1',server_time => re('^\d+$'), args=>{_c=>re('.')} },
         'Call api method "hello"'
     ) or diag(explain($resp));
 }

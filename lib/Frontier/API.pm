@@ -3,88 +3,192 @@ package Frontier::API;
 use strict;
 use warnings;
 use Throw qw(throw);
+use Frontier::MetaCommon;
 
-sub __do_multi__meta {
-    return {
-        desc => 'Cut down on latency by batching calls, they are run in the order you send',
-        args => {
-            calls => [{method=>'see individual methods for meta details'}],
-        },
-        resp => {
-            calls => [{method=>'see individual methods for meta details'}],
-        },
-    };
-}
-sub __do_multi {
-    my ($self,$args) = @_;
-    my $ret = {};
-    foreach my $call (@{$args->{'calls'}}) {
-        my $method = [keys %$call]->[0];
-        my $args = $call->{$method};
-        $args = ref $args eq 'HASH' ? $args : {};
-        my $resp = eval{$self->run_method($method,$args)} || $@;
-        push @{$ret->{'calls'}}, {$method => $resp};
-    }
-    return $ret;
-}
+sub new { __PACKAGE__ } # For Respite::Server
 
-sub __new_board__meta {
-    my ($self,$args) = @_;
-    return {
-        desc => 'Start a new game board',
-        args => {
-            board_pass => {
-                desc => 'The new password all ships will need to connect to this board',
-                type=>'STRING',
-                required => 1,
-            },
-        },
-        resp => {
-        },
-    };
-}
-
-sub __new_board {
-    my ($self,$args) = @_;
-    {TODO=>1};
-}
-
-sub __new_ship__meta {
+sub __new__meta {
     my ($self,$args) = @_;
     return {
         desc => 'Create a new ship',
         args => {
-            ship_id => {
-                type=>'UINT',
-                required => 1,
-            },
-            ship_pass => {
-                desc => 'The password used when performing any ship action',
-                type=>'STRING',
-                required => 1,
-            },
-            board_pass => {
-                desc => 'The new password all ships will need to connect to this board',
-                type=>'STRING',
-                required => 1,
-            },
+            ship_name => $Frontier::MetaCommon::args->{'ship_name'},
+            ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
+            board_pass => $Frontier::MetaCommon::args->{'board_pass'},
+        },
+        resp => $self->__info__meta()->{'resp'},
+    };
+}
+
+sub __new {
+    my ($self,$args) = @_;
+
+    $args->{'ship_id'} = 123; # TODO make the ship
+
+    $self->run_method('ship_info',$args);
+}
+
+sub __info__meta {
+    my ($self,$args) = @_;
+    return {
+        desc => 'Information about your ship',
+        args => {
+            ship_id => $Frontier::MetaCommon::args->{'ship_id'},
+            ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
         },
         resp => {
+            ship_id => $Frontier::MetaCommon::args->{'ship_id'}->{'desc'},
+        }
+    };
+}
+
+sub __info {
+    my ($self,$args) = @_;
+    {TODO=>1};
+}
+
+sub __navigation__meta {
+    my ($self,$args) = @_;
+    return {
+        desc => 'Turn ship and thrust/engine power',
+        ship_status => {
+            energy => 0, # TODO how much is deducted or added for a non-cached call to this method
+            hull   => 0, # TODO how much is deducted or added for a non-cached call to this method
+            shield => 0, # TODO how much is deducted or added for a non-cached call to this method
+        },
+        args => {
+            ship_id => $Frontier::MetaCommon::args->{'ship_id'},
+            ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
+            ship_radians => {desc=>'TODO'},
+            ship_engine_power => {desc=>'TODO'},
+        },
+        resp => {
+            TODO => 1,
         },
     };
 }
 
-sub __new_ship {
+sub __navigation {
+    my ($self,$args) = @_;
+    {TODO=>1};
+}
+
+sub __repair_hull__meta {
+    my ($self,$args) = @_;
+    return {
+        desc => 'Activate/Deactivate hull repairs.  Automatically turns off if there is not sufficient energy.',
+        ship_status => {
+            energy_drain => 0, # TODO how much added/drained per time slice
+            hull_drain => 0, # TODO how much added/drained per time slice
+            hull_drain => 0, # TODO how much added/drained per time slice
+            energy => 0, # TODO how much is deducted or added for a non-cached call to this method
+            hull   => 0, # TODO how much is deducted or added for a non-cached call to this method
+            shield => 0, # TODO how much is deducted or added for a non-cached call to this method
+        },
+        args => {
+            ship_id => $Frontier::MetaCommon::args->{'ship_id'},
+            ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
+            
+        },
+        resp => {
+            TODO => 1,
+        },
+    };
+}
+
+sub __repair_shield {
+    my ($self,$args) = @_;
+    {TODO=>1};
+}
+
+sub __repair_shield__meta {
+    my ($self,$args) = @_;
+    return {
+        desc => 'Activate/Deactivate shield repairs.  Automatically turns off if there is not sufficient energy.',
+        ship_status => {
+            energy_drain => 0, # TODO how much added/drained per time slice
+            hull_drain => 0, # TODO how much added/drained per time slice
+            hull_drain => 0, # TODO how much added/drained per time slice
+            energy => 0, # TODO how much is deducted or added for a non-cached call to this method
+            hull   => 0, # TODO how much is deducted or added for a non-cached call to this method
+            shield => 0, # TODO how much is deducted or added for a non-cached call to this method
+        },
+        args => {
+            ship_id => $Frontier::MetaCommon::args->{'ship_id'},
+            ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
+            
+        },
+        resp => {
+            TODO => 1,
+        },
+    };
+}
+
+sub __repair_shield {
+    my ($self,$args) = @_;
+    {TODO=>1};
+}
+
+sub __navigation__meta {
+    my ($self,$args) = @_;
+    return {
+        desc => 'Turn ship and thrust/engine power',
+        ship_status => {
+            energy => 0, # TODO how much is deducted or added for a non-cached call to this method
+            hull   => 0, # TODO how much is deducted or added for a non-cached call to this method
+            shield => 0, # TODO how much is deducted or added for a non-cached call to this method
+        },
+        args => {
+            ship_id => $Frontier::MetaCommon::args->{'ship_id'},
+            ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
+            ship_radians => {desc=>'TODO'},
+            ship_engine_power => {desc=>'TODO'},
+        },
+        resp => {
+            TODO => 1,
+        },
+    };
+}
+
+sub __navigation {
+    my ($self,$args) = @_;
+    {TODO=>1};
+}
+
+sub __weapon_fire__meta {
+    my ($self,$args) = @_;
+    return {
+        desc => 'Activate/fire a weapon.',
+        ship_status => {
+            energy => 0, # TODO how much is deducted or added for a non-cached call to this method
+            hull   => 0, # TODO how much is deducted or added for a non-cached call to this method
+            shield => 0, # TODO how much is deducted or added for a non-cached call to this method
+        },
+        args => {
+            ship_id => $Frontier::MetaCommon::args->{'ship_id'},
+            ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
+            weapon_radians => {desc=>'TODO'},
+            weapon_id => {desc=>'TODO'},
+            weapon_power => {desc=>'TODO'},
+        },
+        resp => {
+            TODO => 1,
+        },
+    };
+}
+
+sub __weapon_fire {
     my ($self,$args) = @_;
     {TODO=>1};
 }
 
 sub __scan__meta {
+    my ($self,$args) = @_;
     return {
-        desc => 'Performs a short range scan, giving details about nearby objects in play.',
+        desc => 'Performs a scan, giving details about nearby objects.',
         cacheable => {
-            cached => 1, # TODO number of seconds to cache this result per ship
-            key => [], # args to use as a cache key
+            cached => 1, # number of seconds to cache this result per ship
+            key => ['ship_id'], # args to use as a cache key
         },
         ship_status => {
             energy => 0, # TODO how much is deducted or added for a non-cached call to this method
@@ -92,18 +196,11 @@ sub __scan__meta {
             shield => 0, # TODO how much is deducted or added for a non-cached call to this method
         },
         args => {
-            ship_id => {
-                type=>'UINT',
-                required => 1,
-            },
-            ship_pass => {
-                desc => 'The password used when performing any ship action',
-                type=>'STRING',
-                required => 1,
-            },
+            ship_id => $Frontier::MetaCommon::args->{'ship_id'},
+            ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
         },
         resp => {
-            obj => {
+            obj => [{
                 id => {
                     id => 'object id, listed again for convenience',
                     img => 'Image to display for this object',
@@ -120,7 +217,7 @@ sub __scan__meta {
                     obj_radians => 'The direction the object is facing',
                     obj_speed => 'The speed the object is moving',
                 },
-            },
+            }],
             msg => ['a list of recent messages, if any'],
         },
     };
@@ -143,19 +240,6 @@ sub __scan {
         obj => $obj_ret,
         msg => ['hello from frontier '.time()],
     }
-}
-
-sub __scan_long__meta {
-    my $self = shift;
-    my $ret = $self->__scan__meta(@_);
-    $ret->{'desc'} = 'Performs a long range scan, giving basic info for objects beyond the short range scanners range.',
-    $ret->{'ship_status'}->{'energy'} = '-1TODO'; #$self->my->scanner->energy; # TODO calculated from ship stats
-    $ret;
-}
-
-sub __scan_long {
-    my ($self,$args) = @_;
-    $self->__scan($args,1);
 }
 
 sub obj_class {

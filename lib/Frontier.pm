@@ -2,10 +2,29 @@ package Frontier;
 
 use strict;
 use warnings;
-use base qw(Respite::Base Frontier::API);
+use base qw(Respite::Base);
 use Cache::Memcached::Fast;
 use Time::HiRes qw(time);
 use Throw qw(throw);
+
+sub api_meta {
+    return shift->{'api_meta'} ||= { # vtable cached here
+        namespaces => {
+            ship => {
+                match => '__',
+                package => 'Frontier::API',
+            },
+            board => {
+                match => '__',
+                package => 'Frontier::Board',
+            },
+            multi => {
+                match => '__',
+                package => 'Frontier::Multi',
+            },
+        },
+    };
+}
 
 sub server_init {
     my $self = shift;
@@ -40,7 +59,7 @@ sub run_method {
         $ret->{'_cached'} = time;
         $self->memd->set($cache_key,$ret,30);
     }
-    $ret->{'_cached'} = 0;
+    $ret->{'_cached'} = 0 if $cache_key;
     $ret;
 }
 
