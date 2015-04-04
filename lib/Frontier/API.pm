@@ -158,7 +158,7 @@ sub __navigation {
 sub __weapon_fire__meta {
     my ($self,$args) = @_;
     return {
-        desc => 'Turn ship and thrust/engine power',
+        desc => 'Activate/fire a weapon.',
         ship_status => {
             energy => 0, # TODO how much is deducted or added for a non-cached call to this method
             hull   => 0, # TODO how much is deducted or added for a non-cached call to this method
