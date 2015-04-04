@@ -58,7 +58,7 @@ GetOptions (
 pod2usage(1) if $args->{'help'};
 
 $args->{'module'} = "Frontier::ShipAI::".$args->{'module'};
-eval('require '.$args->{'module'}.';') or die 'Could not load module: '.$args->{'module'}."\n";
+eval('require '.$args->{'module'}.';') or die 'Could not load module: '.$args->{'module'}."\n".$@;
 die 'Method main() not found in module: '.$args->{'module'}."\n" unless $args->{'module'}->can('main');
 die 'Method new() not found in module: '.$args->{'module'}."\n" unless $args->{'module'}->can('new');
 
