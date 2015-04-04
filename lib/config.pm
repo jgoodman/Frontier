@@ -18,6 +18,7 @@ sub load {
     $config->{'frontier_service'} = {
         remote => 1,
         host   => 'localhost',
+        service_name => 'frontier',
         brand  => 'test',
         pass   => '-',
         port   => 50443,
