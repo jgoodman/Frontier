@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 32;
+use Test::More tests => 33;
 
 # Libraries for Testing
 # TODO: Move below into make file
@@ -10,6 +10,7 @@ require_ok('Test::Class');
 require_ok('Test::Deep');
 require_ok('Test::Exception');
 require_ok('Sub::Override');
+require_ok('DBD::SQLite');
 
 # Libraries for Respite
 # TODO: Move below into make file

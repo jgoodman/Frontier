@@ -5,6 +5,7 @@ use warnings;
 use base qw(Respite::Base);
 use Cache::Memcached::Fast;
 use Time::HiRes qw(time);
+use DBD::SQLite;
 use Throw qw(throw);
 
 sub api_meta {
@@ -29,6 +30,7 @@ sub api_meta {
 sub server_init {
     my $self = shift;
     $self->memd;
+    $self->dbh;
 }
 
 sub run_method {
@@ -38,7 +40,7 @@ sub run_method {
     my $meta;
     my $cache_key;
     if ($method !~ /__meta$/) {
-        $self->check_permissions($method,$args,$meta) unless $method ~~ ['methods','hello','board_new','ship_new'];
+        $self->check_permissions($method,$args,$meta) unless $method ~~ ['methods','hello','board_list','board_new','ship_new'];
         my $code = $self->find_method($method.'__meta');
         if ($code) {
             $meta = $self->$code();
@@ -65,12 +67,34 @@ sub run_method {
     $ret;
 }
 
+sub call {
+    my ($self,$method,$args) = @_;
+    my $data = $self->frontier->run_method($method => $args);
+    throw $data->data unless $data;
+    $data->data;
+}
+
+sub frontier {
+    my $self = shift;
+    $self->{'frontier_client'} ||= do {
+        require Respite::Client;
+        Respite::Client->new({
+            service=>'frontier',
+            brand=>$self->api_brand,
+        });
+    }
+}
+
 sub check_permissions {
     my ($self,$method,$args,$meta) = @_;
-    throw 'permission denied', {ship_id=>$args->{'ship_id'}} unless $args->{'ship_id'} && $args->{'ship_pass'};
-    # TODO check database to make sure ship_pass matches ship_id
-    # TODO make sure $self->api_brand matches the board_name
-    $self->{'ship_id'} = $args->{'ship_id'};
+    if ($method =~ /^board_/) {
+        throw 'permission denied', {board_name=>$self->api_brand} unless $args->{'board_pass'};
+    } elsif ($method =~ /^ship_/) {
+        throw 'permission denied', {ship_id=>$args->{'ship_id'}} unless $args->{'ship_id'} && $args->{'ship_pass'};
+        # TODO check database to make sure ship_pass matches ship_id
+        # TODO make sure $self->api_brand matches the board_name
+        $self->{'ship_id'} = $args->{'ship_id'};
+    }
 }
 
 sub memd {
@@ -98,6 +122,11 @@ sub memd {
             max_size => 512 * 1024,
         });
     }
+}
+
+sub dbh {
+    my $self = shift;
+    return $self->{'dbh'} ||= DBI->connect("DBI:SQLite:dbname=/home/jter/Frontier/frontier.db","","");
 }
 
 =item

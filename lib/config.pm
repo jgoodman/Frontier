@@ -15,6 +15,7 @@ sub new {
 
 sub load {
     $config->{'no_brand'} = 1;
+    $config->{'salt'} = 'override me';
     $config->{'frontier_service'} = {
         remote => 1,
         host   => 'localhost', # you should override this in config::override.pm

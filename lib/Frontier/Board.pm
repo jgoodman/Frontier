@@ -4,8 +4,21 @@ use strict;
 use warnings;
 use Throw qw(throw);
 use Frontier::MetaCommon;
+use Digest::SHA qw(sha256_hex);
 
-sub new { __PACKAGE__ } # For Respite::Server
+sub new {
+    my ($class,$server) = @_;
+    my $self = bless {server=>$server}, $class;
+    $self;
+} # For Respite::Server
+
+# create table boards(board_id INTEGER PRIMARY KEY NOT NULL, board_name VARCHAR(100) NOT NULL,board_pass VARCHAR(100) NOT NULL,max_players SMALLINT,last_used INTEGER,UNIQUE(board_name));
+sub dbh { my $self = shift; $self->{'server'}->{'base'}->dbh; } # TODO shoudln't need to make this in each method
+
+sub enc {
+    my ($self,$args) = @_;
+    sha256_hex($config::config->{'salt'},$args->{'board_name'},$args->{'board_pass'});
+}
 
 sub __new__meta {
     my ($self,$args) = @_;
@@ -26,7 +39,19 @@ sub __new__meta {
 sub __new {
     my ($self,$args) = @_;
 
-    $args->{'board_id'} = 123; # TODO make a board
+    my $board_pass_enc = $self->enc($args);
+
+    my $old_autocommit = $self->dbh->{AutoCommit};
+    local $self->dbh->{AutoCommit} = 1;
+    my $board = $self->dbh->selectrow_hashref('SELECT * FROM boards WHERE board_name = ?',{},$args->{'board_name'});
+    if (!$board) {
+        local $self->dbh->{'PrintError'} = 0;
+        $self->dbh->do('INSERT INTO boards (board_name,board_pass,max_players) VALUES (?,?,?)',{},$args->{'board_name'},$board_pass_enc,$args->{'max_players'});
+        $board = $self->dbh->selectrow_hashref('SELECT * FROM boards WHERE board_name = ?',{},$args->{'board_name'});
+    }
+    $self->dbh->commit unless $old_autocommit;
+    throw 'Unable to create board.  Perhaps someone else has already used that board_name.' unless $board;
+    throw 'Board found, but password does not match.' unless $board->{'board_pass'} eq $board_pass_enc;
 
     $self->__info($args);
 }
@@ -52,7 +77,15 @@ sub __info__meta {
 
 sub __info {
     my ($self,$args) = @_;
-    {TODO=>1};
+    my $board_pass_enc = $self->enc($args);
+    my $board = $self->dbh->selectrow_hashref('SELECT * FROM boards WHERE board_name = ?',{},$args->{'board_name'});
+    throw 'Board not found.' unless $board;
+    throw 'Board found, but password does not match.' unless $board->{'board_pass'} eq $board_pass_enc;
+
+    delete $board->{'board_pass'};
+    delete $board->{'last_used'};
+    $self->dbh->selectrow_hashref('UPDATE boards SET last_used = strftime("%s") WHERE board_name = ?',{},$args->{'board_name'});
+    $board;
 }
 
 sub __list__meta {
@@ -72,7 +105,11 @@ sub __list__meta {
 
 sub __list {
     my ($self,$args) = @_;
-    {TODO=>1};
+    my $sth = $self->dbh->prepare('SELECT board_name,max_players FROM boards');
+    $sth->execute;
+    {
+        rows=>$sth->fetchall_arrayref({}),
+    };
 }
 
 1;
