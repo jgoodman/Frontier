@@ -59,7 +59,7 @@ sub __hello : Test(1) {
     my $resp = $self->client->hello;
     cmp_deeply(
         $resp,
-        { _cached=>0,api_brand=>'unittest',api_ip=>'127.0.0.1',server_time => re('^\d+$'), args=>{_c=>re('.')} },
+        { api_brand=>'unittest',api_ip=>'127.0.0.1',server_time => re('^\d+$'), args=>{_c=>re('.')} },
         'Call api method "hello"'
     ) or diag(explain($resp));
 }
