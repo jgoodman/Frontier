@@ -227,17 +227,21 @@ sub __scan__meta {
     };
 }
 
+sub _distance {
+    my($obj1,$obj2) = @_;
+    return sqrt(abs($obj1->{'x'} - $obj2->{'x'}) ** 2 + abs($obj1->{'y'} - $obj2->{'y'}) ** 2);
+}
 sub __scan {
-    my ($self, $args, $is_long) = @_;
-
-    #require Frontier::Mock;
-    #my $obj = Frontier::Mock::mocked();
-    my $obj = {0=>{id=>0,x=>1}};
+    my ($self, $args) = @_;
+    my $sth = $self->dbh->prepare('SELECT * FROM ships WHERE board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
+    $sth->execute($self->{'server'}->{'base'}->api_brand);
+    my $obj = $sth->fetchall_hashref('ship_id');
 
     my $obj_ret;
     foreach my $id (keys %$obj) {
-        $obj_ret->{$_} = $obj->{$id}->{$_} foreach ('id','img','scale','type','team','obj_direction');
-        $obj_ret->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('x','y','shield','hull','energy','move_radians','obj_radians','obj_speed');
+        my $is_long = _distance($obj->{$args->{'ship_id'}},$obj->{$id}) > 2000;
+        $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('ship_id','img','scale','type','team','obj_direction');
+        $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('x','y','shield','hull','energy','move_radians','obj_radians','obj_speed');
     }
 
     return {

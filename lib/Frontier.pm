@@ -89,9 +89,10 @@ sub check_permissions {
     my ($self,$method,$args,$meta) = @_;
     if ($method =~ /^board_/) {
         throw 'permission denied', {board_name=>$self->api_brand} unless $args->{'board_pass'};
+        # TODO check database to make sure board_pass matches board
     } elsif ($method =~ /^ship_/) {
         throw 'permission denied', {ship_id=>$args->{'ship_id'}} unless $args->{'ship_id'} && $args->{'ship_pass'};
-        # TODO check database to make sure ship_pass matches ship_id
+        # TODO check database to make sure ship_pass matches ship
         # TODO make sure $self->api_brand matches the board_name
         $self->{'ship_id'} = $args->{'ship_id'};
     }
