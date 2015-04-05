@@ -5,6 +5,7 @@ use warnings;
 use Throw qw(throw);
 use Frontier::MetaCommon;
 use Digest::SHA qw(sha256_hex);
+use Math::Trig;
 
 sub new {
     my ($class,$server) = @_;
@@ -231,6 +232,16 @@ sub _distance {
     my($obj1,$obj2) = @_;
     return sqrt(abs($obj1->{'x'} - $obj2->{'x'}) ** 2 + abs($obj1->{'y'} - $obj2->{'y'}) ** 2);
 }
+sub _radians {
+    my($obj1,$obj2) = @_;
+    my $dy = $obj1->{'y'}-$obj2->{'y'};
+    my $dx = $obj1->{'x'}-$obj2->{'x'};
+    my $rad = abs($dx == 0 ? pi/2 : atan($dy/$dx));
+    return pi-$rad if ($dx <  0 && $dy >= 0);
+    return pi+$rad if ($dx <  0 && $dy < 0);
+    return (2*pi)-$rad if ($dx >= 0 && $dy < 0);
+    return $rad;
+}
 sub __scan {
     my ($self, $args) = @_;
     my $sth = $self->dbh->prepare('SELECT * FROM ships WHERE board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
@@ -240,7 +251,8 @@ sub __scan {
     my $obj_ret;
     foreach my $id (keys %$obj) {
         my $is_long = _distance($obj->{$args->{'ship_id'}},$obj->{$id}) > 2000;
-        $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('ship_id','img','scale','type','team','obj_direction');
+        $obj_ret->{$id}->{'obj_direction'} = _radians($obj->{$args->{'ship_id'}},$obj->{$id});
+        $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('ship_id','img','scale','type','team');
         $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('x','y','shield','hull','energy','move_radians','obj_radians','obj_speed');
     }
 
