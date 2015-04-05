@@ -4,8 +4,21 @@ use strict;
 use warnings;
 use Throw qw(throw);
 use Frontier::MetaCommon;
+use Digest::SHA qw(sha256_hex);
 
-sub new { __PACKAGE__ } # For Respite::Server
+sub new {
+    my ($class,$server) = @_;
+    my $self = bless {server=>$server}, $class;
+    $self;
+} # For Respite::Server
+
+#  create table ships(ship_id INTEGER PRIMARY KEY NOT NULL, board_id INTEGER NOT NULL, ship_name VARCHAR(100) NOT NULL, ship_pass VARCHAR(100) NOT NULL,x REAL NOT NULL,y REAL NOT NULL,energy INTEGER NOT NULL, shield INTEGER NOT NULL, hull INTEGER NOT NULL, FOREIGN KEY(ship_id) REFERENCES boards(board_id),UNIQUE(ship_name,board_id));
+sub dbh { my $self = shift; $self->{'server'}->{'base'}->dbh; } # TODO shoudln't need to make this in each method
+
+sub enc {
+    my ($self,$args) = @_;
+    sha256_hex($config::config->{'salt'},$self->{'server'}->{'base'}->api_brand,$args->{'ship_name'},$args->{'ship_pass'});
+}
 
 sub __new__meta {
     my ($self,$args) = @_;
@@ -23,7 +36,21 @@ sub __new__meta {
 sub __new {
     my ($self,$args) = @_;
 
-    $args->{'ship_id'} = 123; # TODO make the ship
+    $args->{'board_name'} = $self->{'server'}->{'base'}->api_brand;
+    my $board = $self->{'server'}->{'base'}->call('board_info'=>$args);
+
+    my $x = rand(9999) - 5000;
+    my $y = rand(9999) - 5000;
+    my $energy = 100;
+    my $hull = 100;
+    my $shield = 100;
+    {
+        local $self->dbh->{'PrintError'} = 0;
+        $self->dbh->do('INSERT INTO ships (ship_name,ship_pass,board_id,x,y,energy,hull,shield) VALUES (?,?,?,?,?,?,?,?)',{},
+            $args->{'ship_name'},$self->enc($args),$board->{'board_id'},$x,$y,$energy,$hull,$shield)
+            or throw 'Could not create ship';
+    }
+    ($args->{'ship_id'}) = $self->dbh->selectrow_array('SELECT last_insert_rowid()');
 
     $self->__info($args);
 }
@@ -44,7 +71,10 @@ sub __info__meta {
 
 sub __info {
     my ($self,$args) = @_;
-    {TODO=>1,ship_id=>$args->{'ship_id'}};
+    my $ship = $self->dbh->selectrow_hashref('SELECT * FROM ships WHERE ship_id = ?',{},$args->{'ship_id'});
+    delete $ship->{'ship_pass'};
+    $ship->{$_} = int($ship->{$_}) foreach ('x','y');
+    $ship;
 }
 
 sub __navigation__meta {
@@ -197,17 +227,21 @@ sub __scan__meta {
     };
 }
 
+sub _distance {
+    my($obj1,$obj2) = @_;
+    return sqrt(abs($obj1->{'x'} - $obj2->{'x'}) ** 2 + abs($obj1->{'y'} - $obj2->{'y'}) ** 2);
+}
 sub __scan {
-    my ($self, $args, $is_long) = @_;
-
-    #require Frontier::Mock;
-    #my $obj = Frontier::Mock::mocked();
-    my $obj = {0=>{id=>0,x=>1}};
+    my ($self, $args) = @_;
+    my $sth = $self->dbh->prepare('SELECT * FROM ships WHERE board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
+    $sth->execute($self->{'server'}->{'base'}->api_brand);
+    my $obj = $sth->fetchall_hashref('ship_id');
 
     my $obj_ret;
     foreach my $id (keys %$obj) {
-        $obj_ret->{$_} = $obj->{$id}->{$_} foreach ('id','img','scale','type','team','obj_direction');
-        $obj_ret->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('x','y','shield','hull','energy','move_radians','obj_radians','obj_speed');
+        my $is_long = _distance($obj->{$args->{'ship_id'}},$obj->{$id}) > 2000;
+        $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('ship_id','img','scale','type','team','obj_direction');
+        $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('x','y','shield','hull','energy','move_radians','obj_radians','obj_speed');
     }
 
     return {
