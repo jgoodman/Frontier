@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 27;
+use Test::More tests => 32;
 
 # Libraries for Testing
 # TODO: Move below into make file
@@ -28,6 +28,11 @@ require_ok('Throw');
 # Libraries for Frontier
 require_ok('Frontier');
 require_ok('Frontier::API');
+require_ok('Frontier::Board');
+require_ok('Frontier::MetaCommon');
+require_ok('Frontier::Multi');
+require_ok('Frontier::ShipAI');
+require_ok('Frontier::ShipAI::Orbiter');
 require_ok('Frontier::API::Ship');
 require_ok('Frontier::API::ShipStats');
 require_ok('Frontier::Obj');
