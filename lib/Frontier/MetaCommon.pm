@@ -40,6 +40,7 @@ our $args = {
         desc     => 'Spawn a Frontier AI controlled ship when the board is created.',
         enum     => ['Orbiter'], # TODO make these work
         max_values => 49, # board_max_players - 1
+        validate_if => 'spawn_frontier_ship',
     },
 };
 

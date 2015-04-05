@@ -17,7 +17,7 @@ sub load {
     $config->{'no_brand'} = 1;
     $config->{'frontier_service'} = {
         remote => 1,
-        host   => 'localhost',
+        host   => 'localhost', # you should override this in config::override.pm
         service_name => 'frontier',
         brand  => 'test',
         pass   => '-',
@@ -26,6 +26,8 @@ sub load {
         user   => 'jter',
         group  => 'jter',
     };
+      require config::override;
+      config::override->initialize();
     $config;
 }
 
@@ -36,3 +38,18 @@ sub config {
 config::load();
 
 1;
+
+=head1 example config::override.pm
+
+package config::override;
+use strict;
+use warnings;
+use config;
+
+sub initialize {
+    $config::config->{'frontier_service'}->{'host'}  = '192.168.174.129';
+}
+
+1;
+
+=cut
