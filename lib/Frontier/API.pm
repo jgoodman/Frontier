@@ -234,22 +234,20 @@ sub _distance {
 }
 sub _radians {
     my($obj1,$obj2) = @_;
-    my $dy = $obj1->{'y'}-$obj2->{'y'};
-    my $dx = $obj1->{'x'}-$obj2->{'x'};
+    my $dy = $obj2->{'y'}-$obj1->{'y'};
+    my $dx = $obj2->{'x'}-$obj1->{'x'};
     my $rad = abs($dx == 0 ? pi/2 : atan($dy/$dx));
-    return pi-$rad if ($dx <  0 && $dy >= 0);
-    return pi+$rad if ($dx <  0 && $dy < 0);
-    return (2*pi)-$rad if ($dx >= 0 && $dy < 0);
-    return $rad;
+    if      ($dx <  0 && $dy >= 0) { $rad = $rad + 3*pi/2
+    } elsif ($dx <  0 && $dy <  0) { $rad = (3*pi/2)-$rad 
+    } elsif ($dx >= 0 && $dy <  0) { $rad =  $rad-(3*pi/2)
+    } else { $rad = (pi/2)-$rad;
+    }
+    while ($rad > 2*pi) { $rad -= 2*pi }
+    while ($rad < 0 ) { $rad += 2*pi }
+    $rad;
 }
 sub __scan {
     my ($self, $args) = @_;
-$self->dbh->do('UPDATE ships SET obj_radians = obj_radians + 0.5'); # TODO REMOVE ME
-$self->dbh->do('UPDATE ships SET obj_radians = obj_radians - 2*3.14159265358 WHERE obj_radians > 2*3.14159265358'); # TODO REMOVE ME
-$self->dbh->do('UPDATE ships SET x = ((strftime("%s") % 10) * 20)+500 WHERE ship_id = 2'); # TODO REMOVE ME
-$self->dbh->do('UPDATE ships SET y = ((strftime("%s") % 10) * 20)-1100 WHERE ship_id = 2'); # TODO REMOVE ME
-$self->dbh->do('UPDATE ships SET x = cos(obj_radians)*9000 WHERE ship_id = 3'); # TODO REMOVE ME
-$self->dbh->do('UPDATE ships SET y = sin(obj_radians)*9000 WHERE ship_id = 3'); # TODO REMOVE ME
 
     my $sth = $self->dbh->prepare('SELECT * FROM ships WHERE board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
     $sth->execute($self->{'server'}->{'base'}->api_brand);
@@ -267,7 +265,8 @@ $self->dbh->do('UPDATE ships SET y = sin(obj_radians)*9000 WHERE ship_id = 3'); 
         $obj_ret->{$id}->{'obj_direction'} = _radians($obj->{$args->{'ship_id'}},$obj->{$id});
         $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('ship_id','img','scale','type','team');
         $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('shield','hull','energy','move_radians','obj_radians','obj_speed');
-        $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_} - $d->{$_}) foreach ('x','y');
+        $obj_ret->{$id}->{'x'} = ($is_long ? undef : $obj->{$id}->{'x'} - $d->{'x'});
+        $obj_ret->{$id}->{'y'} = ($is_long ? undef : $obj->{$id}->{'y'} - $d->{'y'});
     }
 
     return {

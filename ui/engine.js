@@ -89,11 +89,12 @@ function updateLongRange() {
       longScale = 0.02;
       for (var key in json.obj) {
         if (json.obj[key].shield === null) {
-          ctx.rotate(-json.obj[key].obj_direction);
-          ctx.fillRect(32,32,2,2);
-          ctx.rotate(json.obj[key].obj_direction);
+          d = json.obj[key].obj_direction + Math.PI;
+          ctx.rotate(d);
+          ctx.fillRect(0,44,2,2);
+          ctx.rotate(-d);
         } else {
-  	  ctx.fillRect(json.obj[key]['x'] * longScale ,json.obj[key]['y'] * longScale ,2,2);
+  	  ctx.fillRect(json.obj[key]['x'] * longScale ,json.obj[key]['y'] * -longScale ,2,2);
         }
       }
 
@@ -107,8 +108,8 @@ function updateLongRange() {
 function drawObj(obj) {
   if (obj.shield === null) { return }
   imageObj=preloadImages(obj);
-  ctx.translate(obj.x, obj.y);
-  ctx.rotate(obj.obj_radians);
+  ctx.translate(obj.x, -obj.y);
+  ctx.rotate(obj.obj_radians - Math.PI/2);
   if (imageObj.srcWidth) {
     width = imageObj.width;
     height = imageObj.height;
@@ -120,7 +121,7 @@ function drawObj(obj) {
     ctx.fillStyle="blue";
     ctx.fillRect(15,-2,5,3);
   }
-  ctx.rotate(-obj.obj_radians);
+  ctx.rotate(-(obj.obj_radians - Math.PI/2));
 
   ctx.fillStyle="blue";
   ctx.fillRect(-25,25,obj.shield / 2,3);
@@ -129,7 +130,7 @@ function drawObj(obj) {
   ctx.fillStyle="red";
   ctx.fillRect(-25,33,obj.energy / 2,3);
 
-  ctx.translate(-obj.x, -obj.y);
+  ctx.translate(-obj.x, obj.y);
 }
 
 function getScan() {
@@ -148,8 +149,6 @@ function getScan() {
 }
 
 function move(myjson) {
-  // mimic a request to the server
-  // json.obj = mock_server(); json.obj_long = mock_server_long();
   json.obj = myjson.obj;
 
   newTime = performance.now();
