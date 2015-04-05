@@ -30,7 +30,8 @@ sub api_meta {
 sub server_init {
     my $self = shift;
     $self->memd;
-    $self->dbh;
+    $self->dbh->sqlite_enable_load_extension(1);
+    $self->dbh->do('SELECT load_extension("/home/jter/Frontier/libsqlitefunctions")');
 }
 
 sub run_method {
@@ -64,6 +65,7 @@ sub run_method {
         $self->memd->set($cache_key,$ret,30);
     }
     $ret->{'_cached'} = 0 if $cache_key;
+    $ret->{'_extra_headers'} = [ ['Access-Control-Allow-Origin' => '*'], ];
     $ret;
 }
 
@@ -83,6 +85,12 @@ sub frontier {
             brand=>$self->api_brand,
         });
     }
+}
+
+sub throw {
+    $_[1]->{'_extra_headers'} = [ ['Access-Control-Allow-Origin' => '*'], ];
+    Throw::throw(@_);
+
 }
 
 sub check_permissions {

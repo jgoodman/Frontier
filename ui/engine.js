@@ -70,7 +70,8 @@ function drawBoard() {
 }
 
 function updateObj(obj) {
-  obj2 = json.obj_is[obj.id];
+  if (obj.shield === null) { return }
+  obj2 = json.obj_is[obj.ship_id];
   for (var thing in {x:1,y:1,move_radians:1,obj_radians:1} ) {
     diff = (obj[thing] - obj2[thing]) * drawTimeMod;
     obj2[thing] = obj2[thing] + diff;
@@ -87,12 +88,13 @@ function updateLongRange() {
       ctx.fillStyle = 'red';
       longScale = 0.02;
       for (var key in json.obj) {
-  	ctx.fillRect(json.obj[key]['x'] * longScale ,json.obj[key]['y'] * longScale ,2,2);
-      }
-      for (var key in json.obj_long) {
-        ctx.rotate(json.obj_long[key]);
-  	ctx.fillRect(32,32,2,2);
-        ctx.rotate(-json.obj_long[key]);
+        if (json.obj[key].shield === null) {
+          ctx.rotate(-json.obj[key].obj_direction);
+          ctx.fillRect(32,32,2,2);
+          ctx.rotate(json.obj[key].obj_direction);
+        } else {
+  	  ctx.fillRect(json.obj[key]['x'] * longScale ,json.obj[key]['y'] * longScale ,2,2);
+        }
       }
 
       ctx.translate(-70,-70);
@@ -103,6 +105,7 @@ function updateLongRange() {
 }
 
 function drawObj(obj) {
+  if (obj.shield === null) { return }
   imageObj=preloadImages(obj);
   ctx.translate(obj.x, obj.y);
   ctx.rotate(obj.obj_radians);
@@ -120,20 +123,34 @@ function drawObj(obj) {
   ctx.rotate(-obj.obj_radians);
 
   ctx.fillStyle="blue";
-  ctx.fillRect(-25,25,50*json.obj[obj.id].shield,3);
+  ctx.fillRect(-25,25,obj.shield / 2,3);
   ctx.fillStyle="green";
-  ctx.fillRect(-25,29,50*json.obj[obj.id].hull,3);
+  ctx.fillRect(-25,29,obj.hull / 2,3);
   ctx.fillStyle="red";
-  ctx.fillRect(-25,33,50*json.obj[obj.id].energy,3);
+  ctx.fillRect(-25,33,obj.energy / 2,3);
 
   ctx.translate(-obj.x, -obj.y);
 }
 
-function move() {
+function getScan() {
+    var xmlhttp = new XMLHttpRequest();
+    var url = "http://192.168.174.129:50443/frontier/ship_scan/testing";
 
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            var myArr = JSON.parse(xmlhttp.responseText);
+            move(myArr);
+        }
+    }
+    xmlhttp.open("POST", url, true);
+    xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+    xmlhttp.send('ship_id=8&ship_pass=ship123');
+}
+
+function move(myjson) {
   // mimic a request to the server
-  json.obj = mock_server();
-  json.obj_long = mock_server_long();
+  // json.obj = mock_server(); json.obj_long = mock_server_long();
+  json.obj = myjson.obj;
 
   newTime = performance.now();
   moveTime = newTime - lastTime;
@@ -141,9 +158,6 @@ function move() {
 
   for (var id in json.obj) {
     obj = json.obj[id];
-    for (var thing in {x:1,y:1,obj_radians:1,move_radians:1,scale:1} ) {
-      obj[thing] = Number(obj[thing]); // omg NaN sucks
-    }
     if (!json.obj_is[id]) {
       json.obj_is[id] = {};
       for (var key in obj) {
@@ -156,8 +170,8 @@ function move() {
     }
     json.obj_is[id].img = json.obj[id].img; // make sure we get image updates
   }
-  setTimeout(function(){move()},1000);
+  setTimeout(function(){getScan()},1000);
 }
 
 myVar = setInterval(drawBoard, 20);
-move();
+getScan();

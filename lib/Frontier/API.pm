@@ -13,7 +13,7 @@ sub new {
     $self;
 } # For Respite::Server
 
-#  create table ships(ship_id INTEGER PRIMARY KEY NOT NULL, board_id INTEGER NOT NULL, ship_name VARCHAR(100) NOT NULL, ship_pass VARCHAR(100) NOT NULL,x REAL NOT NULL,y REAL NOT NULL,energy INTEGER NOT NULL, shield INTEGER NOT NULL, hull INTEGER NOT NULL, FOREIGN KEY(ship_id) REFERENCES boards(board_id),UNIQUE(ship_name,board_id));
+# CREATE TABLE ships(ship_id INTEGER PRIMARY KEY NOT NULL, board_id INTEGER NOT NULL, ship_name VARCHAR(100) NOT NULL, ship_pass VARCHAR(100) NOT NULL,x REAL NOT NULL,y REAL NOT NULL,energy INTEGER NOT NULL, shield INTEGER NOT NULL, hull INTEGER NOT NULL, obj_radians REAL NOT NULL default 0, move_radians REAL NOT NULL default 0, move_speed REAL NOT NULL default 0, img VARCHAR(100) NOT NULL default 'ship.png', scale REAL NOT NULL default 1, FOREIGN KEY(ship_id) REFERENCES boards(board_id),UNIQUE(ship_name,board_id));
 sub dbh { my $self = shift; $self->{'server'}->{'base'}->dbh; } # TODO shoudln't need to make this in each method
 
 sub enc {
@@ -244,16 +244,30 @@ sub _radians {
 }
 sub __scan {
     my ($self, $args) = @_;
+$self->dbh->do('UPDATE ships SET obj_radians = obj_radians + 0.5'); # TODO REMOVE ME
+$self->dbh->do('UPDATE ships SET obj_radians = obj_radians - 2*3.14159265358 WHERE obj_radians > 2*3.14159265358'); # TODO REMOVE ME
+$self->dbh->do('UPDATE ships SET x = ((strftime("%s") % 10) * 20)+500 WHERE ship_id = 2'); # TODO REMOVE ME
+$self->dbh->do('UPDATE ships SET y = ((strftime("%s") % 10) * 20)-1100 WHERE ship_id = 2'); # TODO REMOVE ME
+$self->dbh->do('UPDATE ships SET x = cos(obj_radians)*9000 WHERE ship_id = 3'); # TODO REMOVE ME
+$self->dbh->do('UPDATE ships SET y = sin(obj_radians)*9000 WHERE ship_id = 3'); # TODO REMOVE ME
+
     my $sth = $self->dbh->prepare('SELECT * FROM ships WHERE board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
     $sth->execute($self->{'server'}->{'base'}->api_brand);
     my $obj = $sth->fetchall_hashref('ship_id');
+
+    # translate everything to be centered around ME
+    my $d = {
+        x => $obj->{$args->{'ship_id'}}->{'x'},
+        y => $obj->{$args->{'ship_id'}}->{'y'},
+    };
 
     my $obj_ret;
     foreach my $id (keys %$obj) {
         my $is_long = _distance($obj->{$args->{'ship_id'}},$obj->{$id}) > 2000;
         $obj_ret->{$id}->{'obj_direction'} = _radians($obj->{$args->{'ship_id'}},$obj->{$id});
         $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('ship_id','img','scale','type','team');
-        $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('x','y','shield','hull','energy','move_radians','obj_radians','obj_speed');
+        $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('shield','hull','energy','move_radians','obj_radians','obj_speed');
+        $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_} - $d->{$_}) foreach ('x','y');
     }
 
     return {
