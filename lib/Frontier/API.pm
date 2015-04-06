@@ -43,6 +43,7 @@ sub __new {
 
     my $x = rand(9999) - 5000;
     my $y = rand(9999) - 5000;
+$x=-200;$y=200;
     my $energy = 100;
     my $hull = 100;
     my $shield = 100;
@@ -240,10 +241,6 @@ sub _radians {
     my $dy = $obj2->{'y'}-$obj1->{'y'};
     my $dx = $obj2->{'x'}-$obj1->{'x'};
     my $rad = abs($dx == 0 ? pi/2 : atan($dy/$dx));
-    #if      ($dx <  0 && $dy >= 0) { $rad = $rad + 3*pi/2
-    #} elsif ($dx <  0 && $dy <  0) { $rad = (3*pi/2)-$rad 
-    #} elsif ($dx >= 0 && $dy <  0) { $rad =  $rad-(3*pi/2)
-    #} else { $rad = (pi/2)-$rad;
     if      ($dx <  0 && $dy >= 0) { $rad = $rad + pi
     } elsif ($dx <  0 && $dy <  0) { $rad = pi - $rad 
     } elsif ($dx >= 0 && $dy <  0) { $rad = $rad 
@@ -268,6 +265,7 @@ sub __scan {
 
     my $obj_ret;
     foreach my $id (keys %$obj) {
+        $obj_ret->{$id}->{'obj_distance'} = _distance($obj->{$args->{'ship_id'}},$obj->{$id});
         my $is_long = _distance($obj->{$args->{'ship_id'}},$obj->{$id}) > 2000;
         $obj_ret->{$id}->{'obj_direction'} = _radians($obj->{$args->{'ship_id'}},$obj->{$id});
         $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('ship_id','img','scale','type','team');
