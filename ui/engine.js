@@ -5,6 +5,7 @@ secondaryCanvas.width = canvas.width;
 secondaryCanvas.height = canvas.height;
 var ctx = secondaryCanvas.getContext('2d');
 
+var longRange = 2000;
 var moveTime = 0.0001;
 var updateTime = moveTime;
 var lastTime = performance.now();
@@ -85,12 +86,15 @@ function updateLongRange() {
       ctx.fill();
       ctx.translate(70,70);
 
+scanRadius = 44;
+
+longScale = scanRadius / longRange;
+
       ctx.fillStyle = 'red';
-      longScale = 0.02;
       for (var key in json.obj) {
         if (json.obj[key].shield === null) {
           ctx.rotate(-json.obj[key].obj_direction);
-          ctx.fillRect(44,0,2,2);
+          ctx.fillRect(scanRadius,0,2,2);
           ctx.rotate(json.obj[key].obj_direction);
         } else {
   	  ctx.fillRect(json.obj[key]['x'] * longScale ,json.obj[key]['y'] * -longScale ,2,2);
@@ -149,6 +153,8 @@ function getScan() {
 
 function move(myjson) {
   json.obj = myjson.obj;
+  longRange = myjson.long_range;
+console.log(longRange);
 
   newTime = performance.now();
   moveTime = newTime - lastTime;
