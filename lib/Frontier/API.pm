@@ -13,7 +13,8 @@ sub new {
     $self;
 } # For Respite::Server
 
-# CREATE TABLE ships(ship_id INTEGER PRIMARY KEY NOT NULL, board_id INTEGER NOT NULL, ship_name VARCHAR(100) NOT NULL, ship_pass VARCHAR(100) NOT NULL,x REAL NOT NULL,y REAL NOT NULL,energy INTEGER NOT NULL, shield INTEGER NOT NULL, hull INTEGER NOT NULL, obj_radians REAL NOT NULL default 0, move_radians REAL NOT NULL default 0, move_speed REAL NOT NULL default 0, img VARCHAR(100) NOT NULL default 'ship.png', scale REAL NOT NULL default 1, FOREIGN KEY(ship_id) REFERENCES boards(board_id),UNIQUE(ship_name,board_id));
+# CREATE TABLE ships(ship_id INTEGER PRIMARY KEY NOT NULL, board_id INTEGER NOT NULL, ship_name VARCHAR(100) NOT NULL, ship_pass VARCHAR(100) NOT NULL,x REAL NOT NULL,y REAL NOT NULL,energy INTEGER NOT NULL, shield INTEGER NOT NULL, hull INTEGER NOT NULL, obj_radians REAL NOT NULL default 0, move_radians REAL NOT NULL default 0, move_speed REAL NOT NULL default 0, img VARCHAR(100) NOT NULL default 'ship.png', scale REAL NOT NULL default 1, ship_engine_power REAL default 0, FOREIGN KEY(ship_id) REFERENCES boards(board_id),UNIQUE(ship_name,board_id));
+
 sub dbh { my $self = shift; $self->{'server'}->{'base'}->dbh; } # TODO shoudln't need to make this in each method
 
 sub enc {
@@ -90,18 +91,20 @@ sub __navigation__meta {
         args => {
             ship_id => $Frontier::MetaCommon::args->{'ship_id'},
             ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
-            ship_radians => {desc=>'TODO'},
-            ship_engine_power => {desc=>'TODO'},
+            ship_radians => {type=>'NUM',min=>0,max=>7,required=>1},
+            ship_engine_power => {type=>'NUM',min=>0,max=>7,required=>1},
         },
         resp => {
-            TODO => 1,
+            success => 1,
         },
     };
 }
 
 sub __navigation {
     my ($self,$args) = @_;
-    {TODO=>1};
+    $self->dbh->do('UPDATE ships SET obj_radians = ?,ship_engine_power = ? WHERE ship_id = ?',{},
+        $args->{'ship_radians'},$args->{'ship_engine_power'},$args->{'ship_id'});
+    {success=>1};
 }
 
 sub __repair_hull__meta {
@@ -237,14 +240,18 @@ sub _radians {
     my $dy = $obj2->{'y'}-$obj1->{'y'};
     my $dx = $obj2->{'x'}-$obj1->{'x'};
     my $rad = abs($dx == 0 ? pi/2 : atan($dy/$dx));
-    if      ($dx <  0 && $dy >= 0) { $rad = $rad + 3*pi/2
-    } elsif ($dx <  0 && $dy <  0) { $rad = (3*pi/2)-$rad 
-    } elsif ($dx >= 0 && $dy <  0) { $rad =  $rad-(3*pi/2)
-    } else { $rad = (pi/2)-$rad;
+    #if      ($dx <  0 && $dy >= 0) { $rad = $rad + 3*pi/2
+    #} elsif ($dx <  0 && $dy <  0) { $rad = (3*pi/2)-$rad 
+    #} elsif ($dx >= 0 && $dy <  0) { $rad =  $rad-(3*pi/2)
+    #} else { $rad = (pi/2)-$rad;
+    if      ($dx <  0 && $dy >= 0) { $rad = $rad + pi
+    } elsif ($dx <  0 && $dy <  0) { $rad = pi - $rad 
+    } elsif ($dx >= 0 && $dy <  0) { $rad = $rad 
+    } else { $rad = -$rad;
     }
     while ($rad > 2*pi) { $rad -= 2*pi }
     while ($rad < 0 ) { $rad += 2*pi }
-    $rad;
+    2*pi - $rad;
 }
 sub __scan {
     my ($self, $args) = @_;
@@ -273,6 +280,27 @@ sub __scan {
         obj => $obj_ret,
         msg => ['hello from frontier '.time()],
     }
+}
+
+sub __exit__meta {
+    my ($self,$args) = @_;
+    return {
+        desc => 'Delete your ship and quit',
+        args => {
+            ship_id => $Frontier::MetaCommon::args->{'ship_id'},
+            ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
+        },
+        resp => {
+            success => 1,
+        },
+    };
+}
+
+sub __exit {
+    my ($self,$args) = @_;
+    my $sth = $self->dbh->prepare('DELETE FROM ships WHERE ship_id = ?');
+    $sth->execute($args->{'ship_id'});
+    {success=>1};
 }
 
 sub obj_class {

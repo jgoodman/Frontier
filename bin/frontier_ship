@@ -98,4 +98,5 @@ while ($keep_going && $ship->main_keep_going()) {
     $ship->main();
     sleep $ship->can('main_sleep') ? $ship->main_sleep() : 1;
 }
+$ship = undef;
 $log->info("Stopping time: ".time()."\n");
