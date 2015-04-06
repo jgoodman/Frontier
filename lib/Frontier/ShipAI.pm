@@ -21,6 +21,11 @@ sub new {
     return $self;
 }
 
+sub DESTROY {
+    my $self = shift;
+    $self->call(ship_exit=>{});
+}
+
 sub main { } # main loop for processing AI
 sub main_sleep { 1 } # how many seconds to sleep before running main() again
 sub main_keep_going { 1 } # should the main loop be called again
