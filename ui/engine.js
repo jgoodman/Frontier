@@ -154,7 +154,6 @@ function getScan() {
 function move(myjson) {
   json.obj = myjson.obj;
   longRange = myjson.long_range;
-console.log(longRange);
 
   newTime = performance.now();
   moveTime = newTime - lastTime;
