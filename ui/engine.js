@@ -89,10 +89,9 @@ function updateLongRange() {
       longScale = 0.02;
       for (var key in json.obj) {
         if (json.obj[key].shield === null) {
-          d = json.obj[key].obj_direction + Math.PI;
-          ctx.rotate(d);
-          ctx.fillRect(0,44,2,2);
-          ctx.rotate(-d);
+          ctx.rotate(-json.obj[key].obj_direction);
+          ctx.fillRect(44,0,2,2);
+          ctx.rotate(json.obj[key].obj_direction);
         } else {
   	  ctx.fillRect(json.obj[key]['x'] * longScale ,json.obj[key]['y'] * -longScale ,2,2);
         }
@@ -109,7 +108,7 @@ function drawObj(obj) {
   if (obj.shield === null) { return }
   imageObj=preloadImages(obj);
   ctx.translate(obj.x, -obj.y);
-  ctx.rotate(obj.obj_radians - Math.PI/2);
+  ctx.rotate(-obj.obj_radians);
   if (imageObj.srcWidth) {
     width = imageObj.width;
     height = imageObj.height;
@@ -121,7 +120,7 @@ function drawObj(obj) {
     ctx.fillStyle="blue";
     ctx.fillRect(15,-2,5,3);
   }
-  ctx.rotate(-(obj.obj_radians - Math.PI/2));
+  ctx.rotate(obj.obj_radians);
 
   ctx.fillStyle="blue";
   ctx.fillRect(-25,25,obj.shield / 2,3);
@@ -145,7 +144,7 @@ function getScan() {
     }
     xmlhttp.open("POST", url, true);
     xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-    xmlhttp.send('ship_id=8&ship_pass=ship123');
+    xmlhttp.send('ship_id=1&ship_pass=ship123');
 }
 
 function move(myjson) {
