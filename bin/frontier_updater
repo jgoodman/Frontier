@@ -10,6 +10,7 @@ use Time::HiRes qw(sleep);
 use DBD::SQLite;
 use PerlIO::tee; # allow me to redirect "print" to the log file
 require Frontier::API; # TODO move math methods out of here
+use Math::Trig;
 
 =head1 NAME
 
@@ -89,31 +90,49 @@ sub board {
     my $ships = $sth->fetchall_arrayref({});
     ship($_) foreach @$ships;
     if ($board eq 'testing') {
-        $dbh->do('UPDATE ships SET y = 100, x = 100, obj_radians = 1, move_radians = 1, move_speed = 10 WHERE ship_id = 6') if $keep_going<=3; # TODO REMOVE ME
-        $dbh->do('UPDATE ships SET obj_radians = obj_radians - 0.05'); # TODO REMOVE ME
-        $dbh->do('UPDATE ships SET obj_radians = obj_radians - 2*3.14159265358 WHERE obj_radians > 2*3.14159265358'); # TODO REMOVE ME
-        $dbh->do('UPDATE ships SET obj_radians = obj_radians + 2*3.14159265358 WHERE obj_radians < 0'); # TODO REMOVE ME
-        #$dbh->do('UPDATE ships SET x = ((strftime("%s") % 10) * 20)+500 WHERE ship_id = 2'); # TODO REMOVE ME
-        #$dbh->do('UPDATE ships SET y = ((strftime("%s") % 10) * 20)-1100 WHERE ship_id = 2'); # TODO REMOVE ME
-        $dbh->do('UPDATE ships SET x = 0 WHERE ship_id = 8'); # TODO REMOVE ME
-        $dbh->do('UPDATE ships SET y = 0 WHERE ship_id = 8'); # TODO REMOVE ME
-        $dbh->do('UPDATE ships SET x = cos(obj_radians)*2100 WHERE ship_id = 3'); # TODO REMOVE ME
-        $dbh->do('UPDATE ships SET y = sin(obj_radians)*2100 WHERE ship_id = 3'); # TODO REMOVE ME
-        $dbh->do('UPDATE ships SET x = cos(obj_radians)*300 WHERE ship_id = 4'); # TODO REMOVE ME
-        $dbh->do('UPDATE ships SET y = sin(obj_radians)*300 WHERE ship_id = 4'); # TODO REMOVE ME
+        $dbh->do('UPDATE ships SET obj_radians = obj_radians - 0.05 WHERE ship_id <= 4'); # TODO REMOVE ME
+        $dbh->do('UPDATE ships SET x = 0 WHERE ship_id = 1'); # TODO REMOVE ME
+        $dbh->do('UPDATE ships SET y = 0 WHERE ship_id = 1'); # TODO REMOVE ME
+        $dbh->do('UPDATE ships SET x = cos(obj_radians)*400 + 1000 WHERE ship_id = 2'); # TODO REMOVE ME
+        $dbh->do('UPDATE ships SET y = sin(obj_radians)*400 - 2000 WHERE ship_id = 2'); # TODO REMOVE ME
+        $dbh->do('UPDATE ships SET x = cos(obj_radians)*200 WHERE ship_id = 3'); # TODO REMOVE ME
+        $dbh->do('UPDATE ships SET y = sin(obj_radians)*200 WHERE ship_id = 3'); # TODO REMOVE ME
+        #$dbh->do('UPDATE ships SET x = 200 WHERE ship_id = 3'); # TODO REMOVE ME
+        #$dbh->do('UPDATE ships SET y = 0 WHERE ship_id = 3'); # TODO REMOVE ME
+        $dbh->do('UPDATE ships SET x = (select x * 30 from ships where ship_id = 3) WHERE ship_id = 4'); # TODO REMOVE ME
+        $dbh->do('UPDATE ships SET y = (select y * 30 from ships where ship_id = 3) WHERE ship_id = 4'); # TODO REMOVE ME
         my $sthx = $dbh->prepare('SELECT * FROM ships WHERE board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
         $sthx->execute($board);
         my $objx = $sthx->fetchall_hashref('ship_id');
-        my $dd = Frontier::API::_radians($objx->{8},$objx->{3});
-        $dbh->do('UPDATE ships SET obj_radians = '.$dd.' WHERE ship_id = 8'); # TODO REMOVE ME
-        $dbh->do('UPDATE ships SET move_radians = obj_radians'); # TODO REMOVE ME
+        my $dd = Frontier::API::_radians($objx->{1},$objx->{4});
+        $dbh->do('UPDATE ships SET obj_radians = '.$dd.' WHERE ship_id = 1'); # TODO REMOVE ME
+        $dbh->do('UPDATE ships SET move_radians = obj_radians WHERE ship_id <= 4'); # TODO REMOVE ME
     }
 }
 
 sub ship {
     my ($ship) = @_;
-    $dbh->do('UPDATE ships SET x = x + cos(pi()/2 - move_radians)*move_speed,
-                               y = y + sin(pi()/2 - move_radians)*move_speed,
-                               move_speed = move_speed * 0.99 /* I know space does not have friction, but it make movement easier to cap */
+    $dbh->do('UPDATE ships SET obj_radians = obj_radians - 2*3.14159265358 WHERE obj_radians > 2*3.14159265358');
+    $dbh->do('UPDATE ships SET obj_radians = obj_radians + 2*3.14159265358 WHERE obj_radians < 0');
+return if $ship->{'ship_id'} <= 4;
+
+my $dx = cos($ship->{'move_radians'})*$ship->{'move_speed'} + cos($ship->{'obj_radians'})*$ship->{'ship_engine_power'};
+my $dy = sin($ship->{'move_radians'})*$ship->{'move_speed'} + sin($ship->{'obj_radians'})*$ship->{'ship_engine_power'};
+my $speed = (($dx**2)+($dy**2))**0.5;
+$speed = 5 if $speed > 5;
+my $rad = $dx == 0 ? 0 : atan($dy/$dx); # TODO find quandrant
+if      ($dx <  0 && $dy >= 0) { $rad = $rad + pi
+} elsif ($dx <  0 && $dy <  0) { $rad = pi - $rad
+} elsif ($dx >= 0 && $dy <  0) { $rad = $rad
+} else { $rad = -$rad;
+}
+while ($rad > 2*pi) { $rad -= 2*pi }
+while ($rad < 0 ) { $rad += 2*pi }
+
+    $dbh->do('UPDATE ships SET move_speed = ?, move_radians = ? 
+                         WHERE ship_id = ?',{},$speed,$rad, $ship->{'ship_id'});
+    $dbh->do('UPDATE ships SET x = x + cos(move_radians)*move_speed,
+                               y = y + sin(move_radians)*move_speed,
+                               move_speed = move_speed * 1 /* make movement easier to cap */
                          WHERE ship_id = ?',{},$ship->{'ship_id'});
 }

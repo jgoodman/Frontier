@@ -30,6 +30,7 @@ sub __new__meta {
             ship_name => $Frontier::MetaCommon::args->{'ship_name'},
             ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
             board_pass => $Frontier::MetaCommon::args->{'board_pass'},
+            ship_img => {enum => ['ship.png','redship.png'],default=>'ship.png'},
         },
         resp => $self->__info__meta()->{'resp'},
     };
@@ -43,13 +44,14 @@ sub __new {
 
     my $x = rand(9999) - 5000;
     my $y = rand(9999) - 5000;
+$x=200;$y=200;
     my $energy = 100;
     my $hull = 100;
     my $shield = 100;
     {
         local $self->dbh->{'PrintError'} = 0;
-        $self->dbh->do('INSERT INTO ships (ship_name,ship_pass,board_id,x,y,energy,hull,shield) VALUES (?,?,?,?,?,?,?,?)',{},
-            $args->{'ship_name'},$self->enc($args),$board->{'board_id'},$x,$y,$energy,$hull,$shield)
+        $self->dbh->do('INSERT INTO ships (ship_name,ship_pass,board_id,x,y,energy,hull,shield,img) VALUES (?,?,?,?,?,?,?,?,?)',{},
+            $args->{'ship_name'},$self->enc($args),$board->{'board_id'},$x,$y,$energy,$hull,$shield,$args->{'ship_img'})
             or throw 'Could not create ship';
     }
     ($args->{'ship_id'}) = $self->dbh->selectrow_array('SELECT last_insert_rowid()');
@@ -208,6 +210,7 @@ sub __scan__meta {
             ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
         },
         resp => {
+            long_range => 'The distance where scanning becomes less effective',
             obj => [{
                 id => {
                     id => 'object id, listed again for convenience',
@@ -240,10 +243,6 @@ sub _radians {
     my $dy = $obj2->{'y'}-$obj1->{'y'};
     my $dx = $obj2->{'x'}-$obj1->{'x'};
     my $rad = abs($dx == 0 ? pi/2 : atan($dy/$dx));
-    #if      ($dx <  0 && $dy >= 0) { $rad = $rad + 3*pi/2
-    #} elsif ($dx <  0 && $dy <  0) { $rad = (3*pi/2)-$rad 
-    #} elsif ($dx >= 0 && $dy <  0) { $rad =  $rad-(3*pi/2)
-    #} else { $rad = (pi/2)-$rad;
     if      ($dx <  0 && $dy >= 0) { $rad = $rad + pi
     } elsif ($dx <  0 && $dy <  0) { $rad = pi - $rad 
     } elsif ($dx >= 0 && $dy <  0) { $rad = $rad 
@@ -266,9 +265,12 @@ sub __scan {
         y => $obj->{$args->{'ship_id'}}->{'y'},
     };
 
+    my $long_range = 2000;
+
     my $obj_ret;
     foreach my $id (keys %$obj) {
-        my $is_long = _distance($obj->{$args->{'ship_id'}},$obj->{$id}) > 2000;
+        $obj_ret->{$id}->{'obj_distance'} = _distance($obj->{$args->{'ship_id'}},$obj->{$id});
+        my $is_long = _distance($obj->{$args->{'ship_id'}},$obj->{$id}) > $long_range;
         $obj_ret->{$id}->{'obj_direction'} = _radians($obj->{$args->{'ship_id'}},$obj->{$id});
         $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('ship_id','img','scale','type','team');
         $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('shield','hull','energy','move_radians','obj_radians','obj_speed');
@@ -278,6 +280,7 @@ sub __scan {
 
     return {
         obj => $obj_ret,
+        long_range => $long_range,
         msg => ['hello from frontier '.time()],
     }
 }

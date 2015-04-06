@@ -15,6 +15,7 @@ sub new {
     if (!$args->{'ship_name'}) { $args->{'ship_name'} = $class.'_'; $args->{'ship_name'} .= chr( int(rand(25) + 65) ) foreach ( 1 .. 10 ) }
     $self->{'ship_name'} = $args->{'ship_name'};
     $self->{'ship_pass'} = $args->{'ship_pass'};
+    $args->{'ship_img'} = 'redship.png';
     my $board_data = $self->call(board_new=>$args);
     my $ship_data = $self->call(ship_new=>$args);
     $self->{'ship_id'} = $ship_data->{'ship_id'};
