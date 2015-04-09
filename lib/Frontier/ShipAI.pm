@@ -18,7 +18,7 @@ sub new {
     $args->{'ship_img'} = 'redship.png';
     my $board_data = $self->call(board_new=>$args);
     my $ship_data = $self->call(ship_new=>$args);
-    $self->{'ship_id'} = $ship_data->{'ship_id'};
+    $self->{'ship_id'} = $ship_data->{'object_id'};
     return $self;
 }
 

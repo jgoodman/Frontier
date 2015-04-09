@@ -41,9 +41,6 @@ sub __new {
     $args->{'board_name'} = $self->{'server'}->{'base'}->api_brand;
     my $board = $self->{'server'}->{'base'}->call('board_info'=>$args);
 
-    my $x = rand(9999) - 5000;
-    my $y = rand(9999) - 5000;
-$x=200;$y=200;
     my $energy = 100;
     my $hull = 100;
     my $shield = 100;
@@ -51,12 +48,14 @@ $x=200;$y=200;
     my $old_autocommit = $self->dbh->{AutoCommit};
     local $self->dbh->{AutoCommit} = 0;
     {
-        local $self->dbh->{'PrintError'} = 0;
-        $self->dbh->do('INSERT INTO ships (ship_name,ship_pass,board_id,x,y,energy,hull,shield,image) VALUES (?,?,?,?,?,?,?,?,?)',{},
-            $args->{'ship_name'},$self->enc($args),$board->{'board_id'},$x,$y,$energy,$hull,$shield,$args->{'ship_image'})
+        #local $self->dbh->{'PrintError'} = 0;
+        $self->dbh->do('INSERT INTO objects (board_id,hull,image) VALUES (?,?,?)',{},
+            $board->{'board_id'},$hull,$args->{'ship_image'})
             or throw 'Could not create ship';
     }
-    ($args->{'ship_id'}) = $self->dbh->selectrow_array('select last_value from ship_id');
+    ($args->{'ship_id'}) = $self->dbh->selectrow_array('select last_value from object_id');
+    $self->dbh->do('INSERT INTO ships (object_id,ship_name,ship_pass,board_id,energy,shield,ship_engine_power) VALUES (?,?,?,?,?,?,0)',{},
+        $args->{'ship_id'},$args->{'ship_name'},$self->enc($args),$board->{'board_id'},$energy,$shield);
     $self->dbh->commit unless $old_autocommit;
 
     $self->__info($args);
@@ -78,7 +77,7 @@ sub __info__meta {
 
 sub __info {
     my ($self,$args) = @_;
-    my $ship = $self->dbh->selectrow_hashref('SELECT * FROM ships WHERE ship_id = ?',{},$args->{'ship_id'});
+    my $ship = $self->dbh->selectrow_hashref('SELECT * FROM ships LEFT JOIN objects USING (object_id) WHERE object_id = ?',{},$args->{'ship_id'});
     delete $ship->{'ship_pass'};
     $ship->{$_} = int($ship->{$_}) foreach ('x','y');
     $ship;
@@ -285,7 +284,7 @@ sub __exit__meta {
 
 sub __exit {
     my ($self,$args) = @_;
-    my $sth = $self->dbh->prepare('DELETE FROM ships WHERE ship_id = ?');
+    my $sth = $self->dbh->prepare('DELETE FROM objects WHERE object_id = ?');
     $sth->execute($args->{'ship_id'});
     {success=>1};
 }

@@ -12,7 +12,7 @@ sub main {
     my $scan= $self->call(ship_scan=>{});
     my $ship = $scan->{'obj'}->{$self->{'ship_id'}};
 
-    my $nav= $self->call(ship_navigation=>{ship_engine_power=>7,ship_radians=>$ship->{'obj_radians'} + 0.2});
+    my $nav= $self->call(ship_navigation=>{ship_engine_power=>7,ship_radians=>$ship->{'object_radians'} + 0.2});
     #my $nav= $self->call(ship_navigation=>{ship_engine_power=>1,ship_radians=>1});
 }
 
