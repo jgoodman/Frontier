@@ -23,22 +23,22 @@ function resize_canvas(){
 }
 
 function preloadImages(obj) {
-    if (!imageList[obj.img]) {
-      imageList[obj.img] = {};
+    if (!imageList[obj.image]) {
+      imageList[obj.image] = {};
     }
-    if (!imageList[obj.img][obj.scale]) {
-      imageList[obj.img][obj.scale] = new Image();
-      imageList[obj.img][obj.scale].addEventListener("load", function() { imageLoaded(imageList[obj.img][obj.scale],obj.scale); });
-      imageList[obj.img][obj.scale].src = 'images/' + obj.img;
+    if (!imageList[obj.image][obj.image_scale]) {
+      imageList[obj.image][obj.image_scale] = new Image();
+      imageList[obj.image][obj.image_scale].addEventListener("load", function() { imageLoaded(imageList[obj.image][obj.image_scale],obj.image_scale); });
+      imageList[obj.image][obj.image_scale].src = 'images/' + obj.image;
     }
-    return imageList[obj.img][obj.scale];
+    return imageList[obj.image][obj.image_scale];
 }
 
-function imageLoaded(img,scale) {
-  img.srcHeight = img.height;
-  img.srcWidth = img.width;
-  img.width = img.srcWidth * scale;
-  img.height = img.srcHeight * scale;
+function imageLoaded(image,image_scale) {
+  image.srcHeight = image.height;
+  image.srcWidth = image.width;
+  image.width = image.srcWidth * image_scale;
+  image.height = image.srcHeight * image_scale;
 }
 
 function drawBoard() {
@@ -72,8 +72,8 @@ function drawBoard() {
 
 function updateObj(obj) {
   if (obj.shield === null) { return }
-  obj2 = json.obj_is[obj.ship_id];
-  for (var thing in {x:1,y:1,move_radians:1,obj_radians:1} ) {
+  obj2 = json.obj_is[obj.object_id];
+  for (var thing in {x:1,y:1,move_radians:1,object_radians:1} ) {
     diff = (obj[thing] - obj2[thing]) * drawTimeMod;
     obj2[thing] = obj2[thing] + diff;
   }
@@ -93,9 +93,9 @@ longScale = scanRadius / longRange;
       ctx.fillStyle = 'red';
       for (var key in json.obj) {
         if (json.obj[key].shield === null) {
-          ctx.rotate(-json.obj[key].obj_direction);
+          ctx.rotate(-json.obj[key].object_direction);
           ctx.fillRect(scanRadius,0,2,2);
-          ctx.rotate(json.obj[key].obj_direction);
+          ctx.rotate(json.obj[key].object_direction);
         } else {
   	  ctx.fillRect(json.obj[key]['x'] * longScale ,json.obj[key]['y'] * -longScale ,2,2);
         }
@@ -112,7 +112,7 @@ function drawObj(obj) {
   if (obj.shield === null) { return }
   imageObj=preloadImages(obj);
   ctx.translate(obj.x, -obj.y);
-  ctx.rotate(-obj.obj_radians);
+  ctx.rotate(-obj.object_radians);
   if (imageObj.srcWidth) {
     width = imageObj.width;
     height = imageObj.height;
@@ -124,7 +124,7 @@ function drawObj(obj) {
     ctx.fillStyle="blue";
     ctx.fillRect(15,-2,5,3);
   }
-  ctx.rotate(obj.obj_radians);
+  ctx.rotate(obj.object_radians);
 
   ctx.fillStyle="blue";
   ctx.fillRect(-25,25,obj.shield / 2,3);
@@ -171,7 +171,7 @@ function move(myjson) {
         json.obj_is[id]['y'] = json.obj_is[obj.origin_id]['y'];
       }
     }
-    json.obj_is[id].img = json.obj[id].img; // make sure we get image updates
+    json.obj_is[id].image = json.obj[id].image; // make sure we get image updates
   }
   setTimeout(function(){getScan()},1000);
 }

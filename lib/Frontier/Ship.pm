@@ -28,7 +28,7 @@ sub __new__meta {
             ship_name => $Frontier::MetaCommon::args->{'ship_name'},
             ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
             board_pass => $Frontier::MetaCommon::args->{'board_pass'},
-            ship_img => {enum => ['ship.png','redship.png'],default=>'ship.png'},
+            ship_image => {enum => ['ship.png','redship.png'],default=>'ship.png'},
         },
         resp => $self->__info__meta()->{'resp'},
     };
@@ -51,8 +51,8 @@ $x=200;$y=200;
     local $self->dbh->{AutoCommit} = 0;
     {
         local $self->dbh->{'PrintError'} = 0;
-        $self->dbh->do('INSERT INTO ships (ship_name,ship_pass,board_id,x,y,energy,hull,shield,img) VALUES (?,?,?,?,?,?,?,?,?)',{},
-            $args->{'ship_name'},$self->enc($args),$board->{'board_id'},$x,$y,$energy,$hull,$shield,$args->{'ship_img'})
+        $self->dbh->do('INSERT INTO ships (ship_name,ship_pass,board_id,x,y,energy,hull,shield,image) VALUES (?,?,?,?,?,?,?,?,?)',{},
+            $args->{'ship_name'},$self->enc($args),$board->{'board_id'},$x,$y,$energy,$hull,$shield,$args->{'ship_image'})
             or throw 'Could not create ship';
     }
     ($args->{'ship_id'}) = $self->dbh->selectrow_array('select last_value from ship_id');
@@ -216,8 +216,8 @@ sub __scan__meta {
             obj => [{
                 id => {
                     id => 'object id, listed again for convenience',
-                    img => 'Image to display for this object',
-                    scale => 'Size to display the img. 1 = 100%',
+                    image => 'Image to display for this object',
+                    image_scale => 'Size to display the image. 1 = 100%',
                     type => ['ship','projectile','beam'],
                     team => 'Which team is this object from.  Helpful to detect friend or foe',
                     obj_direction => 'The direction the object is compared to you',
@@ -257,9 +257,9 @@ sub _radians {
 sub __scan {
     my ($self, $args) = @_;
 
-    my $sth = $self->dbh->prepare('SELECT * FROM ships WHERE board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
+    my $sth = $self->dbh->prepare('SELECT * FROM ships LEFT JOIN objects USING (object_id) WHERE ships.board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
     $sth->execute($self->{'server'}->{'base'}->api_brand);
-    my $obj = $sth->fetchall_hashref('ship_id');
+    my $obj = $sth->fetchall_hashref('object_id');
 
     # translate everything to be centered around ME
     my $d = {
@@ -271,11 +271,10 @@ sub __scan {
 
     my $obj_ret;
     foreach my $id (keys %$obj) {
-        $obj_ret->{$id}->{'obj_distance'} = _distance($obj->{$args->{'ship_id'}},$obj->{$id});
         my $is_long = _distance($obj->{$args->{'ship_id'}},$obj->{$id}) > $long_range;
-        $obj_ret->{$id}->{'obj_direction'} = _radians($obj->{$args->{'ship_id'}},$obj->{$id});
-        $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('ship_id','img','scale','type','team');
-        $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('shield','hull','energy','move_radians','obj_radians','obj_speed');
+        $obj_ret->{$id}->{'object_direction'} = _radians($obj->{$args->{'ship_id'}},$obj->{$id});
+        $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('object_id','image','image_scale','type','team');
+        $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('shield','hull','energy','move_radians','object_radians','move_speed');
         $obj_ret->{$id}->{'x'} = ($is_long ? undef : $obj->{$id}->{'x'} - $d->{'x'});
         $obj_ret->{$id}->{'y'} = ($is_long ? undef : $obj->{$id}->{'y'} - $d->{'y'});
     }
