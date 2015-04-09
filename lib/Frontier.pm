@@ -30,8 +30,6 @@ sub api_meta {
 sub server_init {
     my $self = shift;
     $self->memd;
-    $self->dbh->sqlite_enable_load_extension(1);
-    $self->dbh->do('SELECT load_extension("/home/jter/Frontier/libsqlitefunctions")');
 }
 
 sub run_method {
@@ -90,7 +88,6 @@ sub frontier {
 sub throw {
     $_[1]->{'_extra_headers'} = [ ['Access-Control-Allow-Origin' => '*'], ];
     Throw::throw(@_);
-
 }
 
 sub check_permissions {
@@ -99,7 +96,7 @@ sub check_permissions {
         throw 'permission denied', {board_name=>$self->api_brand} unless $args->{'board_pass'};
         # TODO check database to make sure board_pass matches board
     } elsif ($method =~ /^ship_/) {
-        throw 'permission denied', {ship_id=>$args->{'ship_id'}} unless $args->{'ship_id'} && $args->{'ship_pass'};
+        throw 'permission denied', {method=>$method,ship_id=>$args->{'ship_id'}} unless $args->{'ship_id'} && $args->{'ship_pass'};
         # TODO check database to make sure ship_pass matches ship
         # TODO make sure $self->api_brand matches the board_name
         $self->{'ship_id'} = $args->{'ship_id'};
@@ -135,7 +132,7 @@ sub memd {
 
 sub dbh {
     my $self = shift;
-    return $self->{'dbh'} ||= DBI->connect("DBI:SQLite:dbname=/home/jter/Frontier/frontier.db","","");
+    return $self->{'dbh'} ||= DBI->connect("dbi:Pg:dbname=".$config::config{'sql_db'}, $config::config{'sql_user'}, $config::config{'sql_pass'}, {AutoCommit => 1});
 }
 
 =item

@@ -16,6 +16,11 @@ sub new {
 sub load {
     $config->{'no_brand'} = 1;
     $config->{'salt'} = 'override me';
+
+    $config->{'sql_db'} = 'frontier';
+    $config->{'sql_user'} = 'frontier';
+    $config->{'sql_pass'} = 'override me';
+
     $config->{'frontier_service'} = {
         remote => 1,
         host   => 'localhost', # you should override this in config::override.pm
@@ -27,8 +32,8 @@ sub load {
         user   => 'jter',
         group  => 'jter',
     };
-      require config::override;
-      config::override->initialize();
+
+    config::override->initialize() if eval {require config::override;};
     $config;
 }
 

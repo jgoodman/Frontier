@@ -48,13 +48,17 @@ $x=200;$y=200;
     my $energy = 100;
     my $hull = 100;
     my $shield = 100;
+
+    my $old_autocommit = $self->dbh->{AutoCommit};
+    local $self->dbh->{AutoCommit} = 0;
     {
         local $self->dbh->{'PrintError'} = 0;
         $self->dbh->do('INSERT INTO ships (ship_name,ship_pass,board_id,x,y,energy,hull,shield,img) VALUES (?,?,?,?,?,?,?,?,?)',{},
             $args->{'ship_name'},$self->enc($args),$board->{'board_id'},$x,$y,$energy,$hull,$shield,$args->{'ship_img'})
             or throw 'Could not create ship';
     }
-    ($args->{'ship_id'}) = $self->dbh->selectrow_array('SELECT last_insert_rowid()');
+    ($args->{'ship_id'}) = $self->dbh->selectrow_array('select last_value from ship_id');
+    $self->dbh->commit unless $old_autocommit;
 
     $self->__info($args);
 }

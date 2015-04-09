@@ -24,7 +24,7 @@ sub new {
 
 sub DESTROY {
     my $self = shift;
-    $self->call(ship_exit=>{});
+    $self->call(ship_exit=>{}) if $self->{'ship_id'};
 }
 
 sub main { } # main loop for processing AI
