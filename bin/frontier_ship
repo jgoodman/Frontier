@@ -52,7 +52,7 @@ GetOptions (
 "b|board=s" => \$args->{'ship'}->{'board_name'},
 "p|pass|password=s" => \$args->{'ship'}->{'board_pass'},
 "s|ship|ship_name=s" => \$args->{'ship'}->{'ship_name'},
-"ship_pass=s" => \$args->{'ship'}->{'ship_name'},
+"ship_pass=s" => \$args->{'ship'}->{'ship_pass'},
 "m|module=s" => \$args->{'module'},
 "d|daemonize" => \$args->{'daemonize'},
 "h|help" => \$args->{'help'},
