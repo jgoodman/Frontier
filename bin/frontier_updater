@@ -9,7 +9,7 @@ use Data::Dumper;
 use Time::HiRes qw(sleep);
 use DBD::SQLite;
 use PerlIO::tee; # allow me to redirect "print" to the log file
-require Frontier::API; # TODO move math methods out of here
+require Frontier::Ship; # TODO move math methods out of here
 use Math::Trig;
 use config;
 
@@ -104,7 +104,7 @@ sub board {
         my $sthx = $dbh->prepare('SELECT * FROM ships WHERE board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
         $sthx->execute($board);
         my $objx = $sthx->fetchall_hashref('ship_id');
-        my $dd = Frontier::API::_radians($objx->{1},$objx->{4});
+        my $dd = Frontier::Ship::_radians($objx->{1},$objx->{4});
         $dbh->do('UPDATE ships SET obj_radians = '.$dd.' WHERE ship_id = 1'); # TODO REMOVE ME
         $dbh->do('UPDATE ships SET move_radians = obj_radians WHERE ship_id <= 4'); # TODO REMOVE ME
     }

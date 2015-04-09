@@ -13,7 +13,7 @@ sub api_meta {
         namespaces => {
             ship => {
                 match => '__',
-                package => 'Frontier::API',
+                package => 'Frontier::Ship',
             },
             board => {
                 match => '__',
