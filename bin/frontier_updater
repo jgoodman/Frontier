@@ -9,7 +9,7 @@ use Data::Dumper;
 use Time::HiRes qw(sleep);
 use DBD::SQLite;
 use PerlIO::tee; # allow me to redirect "print" to the log file
-require Frontier::Ship; # TODO move math methods out of here
+require Frontier::Common;
 use Math::Trig;
 use config;
 
@@ -67,7 +67,6 @@ $SIG{TERM} = sub { $log->warning("Caught SIGTERM: exiting gracefully\n"); $keep_
 $SIG{__WARN__} = \&sig_warn;
 sub sig_warn { $log->warning(@_); }
 
-require Frontier::Common;
 my $dbh = Frontier::Common::new_dbh();
 
 while ($keep_going++) {
@@ -104,7 +103,7 @@ sub board {
         my $sthx = $dbh->prepare('SELECT * FROM ships LEFT JOIN objects USING (object_id) WHERE ships.board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
         $sthx->execute($board);
         my $objx = $sthx->fetchall_hashref('object_id');
-        my $dd = Frontier::Ship::_radians($objx->{1},$objx->{4});
+        my $dd = Frontier::Common::radians($objx->{1},$objx->{4});
         $dbh->do('UPDATE objects SET object_radians = '.$dd.' WHERE object_id = 1'); # TODO REMOVE ME
         $dbh->do('UPDATE objects SET move_radians = object_radians WHERE object_id <= 4'); # TODO REMOVE ME
     }

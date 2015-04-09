@@ -5,6 +5,7 @@ use warnings;
 use Throw qw(throw);
 use Frontier::MetaCommon;
 use Digest::SHA qw(sha256_hex);
+use Frontier::Common;
 use Math::Trig;
 
 sub new {
@@ -236,24 +237,6 @@ sub __scan__meta {
     };
 }
 
-sub _distance {
-    my($obj1,$obj2) = @_;
-    return sqrt(abs($obj1->{'x'} - $obj2->{'x'}) ** 2 + abs($obj1->{'y'} - $obj2->{'y'}) ** 2);
-}
-sub _radians {
-    my($obj1,$obj2) = @_;
-    my $dy = $obj2->{'y'}-$obj1->{'y'};
-    my $dx = $obj2->{'x'}-$obj1->{'x'};
-    my $rad = abs($dx == 0 ? pi/2 : atan($dy/$dx));
-    if      ($dx <  0 && $dy >= 0) { $rad = $rad + pi
-    } elsif ($dx <  0 && $dy <  0) { $rad = pi - $rad 
-    } elsif ($dx >= 0 && $dy <  0) { $rad = $rad 
-    } else { $rad = -$rad;
-    }
-    while ($rad > 2*pi) { $rad -= 2*pi }
-    while ($rad < 0 ) { $rad += 2*pi }
-    2*pi - $rad;
-}
 sub __scan {
     my ($self, $args) = @_;
 
@@ -271,8 +254,8 @@ sub __scan {
 
     my $obj_ret;
     foreach my $id (keys %$obj) {
-        my $is_long = _distance($obj->{$args->{'ship_id'}},$obj->{$id}) > $long_range;
-        $obj_ret->{$id}->{'object_direction'} = _radians($obj->{$args->{'ship_id'}},$obj->{$id});
+        my $is_long = Frontier::Common::distance($obj->{$args->{'ship_id'}},$obj->{$id}) > $long_range;
+        $obj_ret->{$id}->{'object_direction'} = Frontier::Common::radians($obj->{$args->{'ship_id'}},$obj->{$id});
         $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('object_id','image','image_scale','type','team');
         $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('shield','hull','energy','move_radians','object_radians','move_speed');
         $obj_ret->{$id}->{'x'} = ($is_long ? undef : $obj->{$id}->{'x'} - $d->{'x'});
