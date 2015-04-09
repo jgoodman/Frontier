@@ -11,6 +11,7 @@ use DBD::SQLite;
 use PerlIO::tee; # allow me to redirect "print" to the log file
 require Frontier::API; # TODO move math methods out of here
 use Math::Trig;
+use config;
 
 =head1 NAME
 
@@ -66,9 +67,8 @@ $SIG{TERM} = sub { $log->warning("Caught SIGTERM: exiting gracefully\n"); $keep_
 $SIG{__WARN__} = \&sig_warn;
 sub sig_warn { $log->warning(@_); }
 
-my $dbh = DBI->connect("DBI:SQLite:dbname=/home/jter/Frontier/frontier.db","","");
-$dbh->sqlite_enable_load_extension(1);
-$dbh->do('SELECT load_extension("/home/jter/Frontier/libsqlitefunctions")');
+require Frontier;
+my $dbh = Frontier::dbh({}); # dirty hack
 
 while ($keep_going++) {
     main();
