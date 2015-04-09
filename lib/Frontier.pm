@@ -6,6 +6,7 @@ use base qw(Respite::Base);
 use Cache::Memcached::Fast;
 use Time::HiRes qw(time);
 use DBD::SQLite;
+use Frontier::Common;
 use Throw qw(throw);
 
 sub api_meta {
@@ -132,7 +133,7 @@ sub memd {
 
 sub dbh {
     my $self = shift;
-    return $self->{'dbh'} ||= DBI->connect("dbi:Pg:dbname=".$config::config{'sql_db'}, $config::config{'sql_user'}, $config::config{'sql_pass'}, {AutoCommit => 1});
+    return $self->{'dbh'} ||= Frontier::Common::new_dbh();
 }
 
 =item

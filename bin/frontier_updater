@@ -67,8 +67,8 @@ $SIG{TERM} = sub { $log->warning("Caught SIGTERM: exiting gracefully\n"); $keep_
 $SIG{__WARN__} = \&sig_warn;
 sub sig_warn { $log->warning(@_); }
 
-require Frontier;
-my $dbh = Frontier::dbh({}); # dirty hack
+require Frontier::Common;
+my $dbh = Frontier::Common::new_dbh();
 
 while ($keep_going++) {
     main();

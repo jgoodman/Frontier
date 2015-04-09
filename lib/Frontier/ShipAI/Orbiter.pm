@@ -4,6 +4,7 @@ use warnings;
 use Data::Dumper;
 use base qw(Frontier::ShipAI);
 use Math::Trig;
+use Frontier::Common;
 
 sub main {
     my ($self) = @_;

@@ -13,9 +13,7 @@ sub new {
     $self;
 } # For Respite::Server
 
-# CREATE TABLE ships(ship_id INTEGER PRIMARY KEY NOT NULL, board_id INTEGER NOT NULL, ship_name VARCHAR(100) NOT NULL, ship_pass VARCHAR(100) NOT NULL,x REAL NOT NULL,y REAL NOT NULL,energy INTEGER NOT NULL, shield INTEGER NOT NULL, hull INTEGER NOT NULL, obj_radians REAL NOT NULL default 0, move_radians REAL NOT NULL default 0, move_speed REAL NOT NULL default 0, img VARCHAR(100) NOT NULL default 'ship.png', scale REAL NOT NULL default 1, ship_engine_power REAL default 0, FOREIGN KEY(ship_id) REFERENCES boards(board_id),UNIQUE(ship_name,board_id));
-
-sub dbh { my $self = shift; $self->{'server'}->{'base'}->dbh; } # TODO shoudln't need to make this in each method
+sub dbh { my $self = shift; $self->{'server'}->{'base'}->dbh; } # TODO shouldn't need to make this in each method
 
 sub enc {
     my ($self,$args) = @_;
