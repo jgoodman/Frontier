@@ -256,9 +256,7 @@ sub __scan {
         my $is_long = Frontier::Common::distance($obj->{$args->{'ship_id'}},$obj->{$id}) > $long_range;
         $obj_ret->{$id}->{'object_direction'} = Frontier::Common::radians($obj->{$args->{'ship_id'}},$obj->{$id});
         $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('object_id','image','image_scale','type','team');
-        $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('shield','hull','energy','move_radians','object_radians','move_speed');
-        $obj_ret->{$id}->{'x'} = ($is_long ? undef : $obj->{$id}->{'x'} - $d->{'x'});
-        $obj_ret->{$id}->{'y'} = ($is_long ? undef : $obj->{$id}->{'y'} - $d->{'y'});
+        $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}+0) foreach ('shield','hull','energy','move_radians','object_radians','move_speed','x','y');
     }
 
     return {
