@@ -3,7 +3,6 @@ use strict;
 use warnings;
 use Data::Dumper;
 use base qw(Frontier::ShipAI);
-require Frontier::API;
 use Math::Trig;
 
 sub main {

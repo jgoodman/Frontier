@@ -12,6 +12,10 @@ sub new {
     $self;
 } # For Respite::Server
 
+# pg_hba.conf change from "peer" to "md5" auth
+# create database frontier
+# create user frontier password 'change me';
+# GRANT ALL PRIVILEGES ON DATABASE frontier to frontier;
 # create table boards(board_id INTEGER PRIMARY KEY NOT NULL, board_name VARCHAR(100) NOT NULL,board_pass VARCHAR(100) NOT NULL,max_players SMALLINT,last_used INTEGER,UNIQUE(board_name));
 sub dbh { my $self = shift; $self->{'server'}->{'base'}->dbh; } # TODO shoudln't need to make this in each method
 
@@ -42,7 +46,7 @@ sub __new {
     my $board_pass_enc = $self->enc($args);
 
     my $old_autocommit = $self->dbh->{AutoCommit};
-    local $self->dbh->{AutoCommit} = 1;
+    local $self->dbh->{AutoCommit} = 0;
     my $board = $self->dbh->selectrow_hashref('SELECT * FROM boards WHERE board_name = ?',{},$args->{'board_name'});
     if (!$board) {
         local $self->dbh->{'PrintError'} = 0;
@@ -84,7 +88,7 @@ sub __info {
 
     delete $board->{'board_pass'};
     delete $board->{'last_used'};
-    $self->dbh->selectrow_hashref('UPDATE boards SET last_used = strftime("%s") WHERE board_name = ?',{},$args->{'board_name'});
+    $self->dbh->do('UPDATE boards SET last_used = extract(epoch FROM now()) WHERE board_name = ?',{},$args->{'board_name'});
     $board;
 }
 
