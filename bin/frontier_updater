@@ -84,10 +84,13 @@ sub main {
 
 sub board {
     my $board = shift;
-    my $sth = $dbh->prepare('SELECT * FROM objects WHERE board_id = (SELECT board_id FROM boards WHERE board_name = ?) ORDER BY object_id');
+    my $sth = $dbh->prepare('SELECT * FROM ships LEFT JOIN objects USING (object_id) WHERE ships.board_id = (SELECT board_id FROM boards WHERE board_name = ?) ORDER BY object_id');
     $sth->execute($board);
     my $ships = $sth->fetchall_arrayref({});
     ship($_) foreach @$ships;
+    my $sth = $dbh->prepare('SELECT * FROM objects WHERE board_id = (SELECT board_id FROM boards WHERE board_name = ?) ORDER BY object_id');
+    $sth->execute($board);
+    my $objects = $sth->fetchall_arrayref({});
     if ($board eq 'testing') {
         $dbh->do('UPDATE objects SET object_radians = object_radians - 0.05 WHERE object_id <= 4'); # TODO REMOVE ME
         $dbh->do('UPDATE objects SET x = 0 WHERE object_id = 1'); # TODO REMOVE ME
