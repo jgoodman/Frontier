@@ -76,22 +76,17 @@ while ($keep_going++) {
 $log->info("Stopping time: ".time()."\n");
 
 sub main {
-    my $sth = $dbh->prepare('SELECT * FROM boards');
-    $sth->execute();
-    my $boards = $sth->fetchall_arrayref({});
-    board($_->{'board_name'}) foreach(@$boards);
-}
+    if ($keep_going % 10 == 0) {
+        my $sth = $dbh->do('UPDATE ships SET energy = LEAST(energy_max,energy+energy_regen)');
+    }
+    $dbh->do('UPDATE objects SET object_radians = object_radians - 2*3.14159265358 WHERE object_radians > 2*3.14159265358');
+    $dbh->do('UPDATE objects SET object_radians = object_radians + 2*3.14159265358 WHERE object_radians < 0');
 
-sub board {
-    my $board = shift;
-    my $sth = $dbh->prepare('SELECT * FROM ships LEFT JOIN objects USING (object_id) WHERE ships.board_id = (SELECT board_id FROM boards WHERE board_name = ?) ORDER BY object_id');
-    $sth->execute($board);
-    my $ships = $sth->fetchall_arrayref({});
-    ship($_) foreach @$ships;
-    my $sth = $dbh->prepare('SELECT * FROM objects WHERE board_id = (SELECT board_id FROM boards WHERE board_name = ?) ORDER BY object_id');
-    $sth->execute($board);
+    my $sth = $dbh->prepare('SELECT * FROM objects LEFT JOIN ships USING (object_id)');
+    $sth->execute();
     my $objects = $sth->fetchall_arrayref({});
-    if ($board eq 'testing') {
+    ship($_) foreach @$objects;
+    if (1) {
         $dbh->do('UPDATE objects SET object_radians = object_radians - 0.05 WHERE object_id <= 4'); # TODO REMOVE ME
         $dbh->do('UPDATE objects SET x = 0 WHERE object_id = 1'); # TODO REMOVE ME
         $dbh->do('UPDATE objects SET y = 0 WHERE object_id = 1'); # TODO REMOVE ME
@@ -104,7 +99,7 @@ sub board {
         $dbh->do('UPDATE objects SET x = (select x * 30 from objects where object_id = 3) WHERE object_id = 4'); # TODO REMOVE ME
         $dbh->do('UPDATE objects SET y = (select y * 30 from objects where object_id = 3) WHERE object_id = 4'); # TODO REMOVE ME
         my $sthx = $dbh->prepare('SELECT * FROM ships LEFT JOIN objects USING (object_id) WHERE ships.board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
-        $sthx->execute($board);
+        $sthx->execute('testing');
         my $objx = $sthx->fetchall_hashref('object_id');
         my $dd = Frontier::Common::radians($objx->{1},$objx->{4});
         $dbh->do('UPDATE objects SET object_radians = '.$dd.' WHERE object_id = 1'); # TODO REMOVE ME
@@ -114,25 +109,18 @@ sub board {
 
 sub ship {
     my ($ship) = @_;
-    $dbh->do('UPDATE objects SET object_radians = object_radians - 2*3.14159265358 WHERE object_radians > 2*3.14159265358');
-    $dbh->do('UPDATE objects SET object_radians = object_radians + 2*3.14159265358 WHERE object_radians < 0');
-return if $ship->{'object_id'} <= 4;
+    return unless exists $ship->{'shield'};
 
-my $dx = cos($ship->{'move_radians'})*$ship->{'move_speed'} + cos($ship->{'object_radians'})*$ship->{'ship_engine_power'};
-my $dy = sin($ship->{'move_radians'})*$ship->{'move_speed'} + sin($ship->{'object_radians'})*$ship->{'ship_engine_power'};
-my $speed = (($dx**2)+($dy**2))**0.5;
-$speed = 5 if $speed > 5;
-my $rad = $dx == 0 ? 0 : atan($dy/$dx); # TODO find quandrant
-if      ($dx <  0 && $dy >= 0) { $rad = $rad + pi
-} elsif ($dx <  0 && $dy <  0) { $rad = pi - $rad
-} elsif ($dx >= 0 && $dy <  0) { $rad = $rad
-} else { $rad = -$rad;
-}
-while ($rad > 2*pi) { $rad -= 2*pi }
-while ($rad < 0 ) { $rad += 2*pi }
+    if ($ship->{'energy'} >= $ship->{'ship_engine_power'}) {
+        my $dx = cos($ship->{'move_radians'})*$ship->{'move_speed'} + cos($ship->{'object_radians'})*$ship->{'ship_engine_power'};
+        my $dy = sin($ship->{'move_radians'})*$ship->{'move_speed'} + sin($ship->{'object_radians'})*$ship->{'ship_engine_power'};
+        my $speed = (($dx**2)+($dy**2))**0.5;
+        $speed = 15 if $speed > 15;
+        my $rad = Frontier::Common::radians({x=>0,y=>0},{x=>$dx,y=>$dy});
+        $dbh->do('UPDATE objects SET move_speed = ?, move_radians = ? WHERE object_id = ?',{},$speed,$rad, $ship->{'object_id'});
+        $dbh->do('UPDATE ships SET energy = energy - ? WHERE object_id = ?',{}, $ship->{'ship_engine_power'}/10.0, $ship->{'object_id'});
+    }
 
-    $dbh->do('UPDATE objects SET move_speed = ?, move_radians = ? 
-                         WHERE object_id = ?',{},$speed,$rad, $ship->{'object_id'});
     $dbh->do('UPDATE objects SET x = x + cos(move_radians)*move_speed,
                                y = y + sin(move_radians)*move_speed,
                                move_speed = move_speed * 1 /* make movement easier to cap */
