@@ -49,7 +49,7 @@ sub __new {
     local $self->dbh->{AutoCommit} = 0;
     {
         #local $self->dbh->{'PrintError'} = 0;
-        $self->dbh->do('INSERT INTO objects (board_id,hull,image) VALUES (?,?,?)',{},
+        $self->dbh->do('INSERT INTO objects (board_id,hull,image,x,y) VALUES (?,?,?,200,200)',{},
             $board->{'board_id'},$hull,$args->{'ship_image'})
             or throw 'Could not create ship';
     }
@@ -106,8 +106,8 @@ sub __navigation__meta {
 
 sub __navigation {
     my ($self,$args) = @_;
-    $self->dbh->do('UPDATE ships SET obj_radians = ?,ship_engine_power = ? WHERE ship_id = ?',{},
-        $args->{'ship_radians'},$args->{'ship_engine_power'},$args->{'ship_id'});
+    $self->dbh->do('UPDATE objects SET object_radians = ? WHERE object_id = ?',{},$args->{'ship_radians'},$args->{'ship_id'});
+    $self->dbh->do('UPDATE ships SET ship_engine_power = ? WHERE object_id = ?',{},$args->{'ship_engine_power'},$args->{'ship_id'});
     {success=>1};
 }
 
