@@ -1,0 +1,219 @@
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET search_path = public, pg_catalog;
+
+--
+-- Name: board_id; Type: SEQUENCE; Schema: public; Owner: frontier
+--
+
+CREATE SEQUENCE board_id
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.board_id OWNER TO frontier;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: boards; Type: TABLE; Schema: public; Owner: frontier; Tablespace: 
+--
+
+CREATE TABLE boards (
+    board_id integer DEFAULT nextval('board_id'::regclass) NOT NULL,
+    board_name character varying(100) NOT NULL,
+    board_pass character(64) NOT NULL,
+    max_players smallint NOT NULL,
+    last_used integer DEFAULT date_part('epoch'::text, now()) NOT NULL
+);
+
+
+ALTER TABLE public.boards OWNER TO frontier;
+
+--
+-- Name: object_id; Type: SEQUENCE; Schema: public; Owner: frontier
+--
+
+CREATE SEQUENCE object_id
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.object_id OWNER TO frontier;
+
+--
+-- Name: objects; Type: TABLE; Schema: public; Owner: frontier; Tablespace: 
+--
+
+CREATE TABLE objects (
+    object_id integer DEFAULT nextval('object_id'::regclass) NOT NULL,
+    board_id integer NOT NULL,
+    x real DEFAULT (round((random() * (100000)::double precision)) - (50000)::double precision) NOT NULL,
+    y real DEFAULT (round((random() * (100000)::double precision)) - (50000)::double precision) NOT NULL,
+    hull integer NOT NULL,
+    object_radians real DEFAULT ((random() * (2)::double precision) * pi()) NOT NULL,
+    move_radians real DEFAULT ((random() * (2)::double precision) * pi()) NOT NULL,
+    move_speed real DEFAULT 0 NOT NULL,
+    image character varying(100) DEFAULT 'ship.png'::character varying NOT NULL,
+    image_scale real DEFAULT 1 NOT NULL
+);
+
+
+ALTER TABLE public.objects OWNER TO frontier;
+
+--
+-- Name: ships; Type: TABLE; Schema: public; Owner: frontier; Tablespace: 
+--
+
+CREATE TABLE ships (
+    object_id integer NOT NULL,
+    board_id integer NOT NULL,
+    ship_name character varying(100) NOT NULL,
+    ship_pass character(64) NOT NULL,
+    ship_engine_power real NOT NULL,
+    energy integer DEFAULT 0 NOT NULL,
+    shield integer DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE public.ships OWNER TO frontier;
+
+--
+-- Name: board_id; Type: SEQUENCE SET; Schema: public; Owner: frontier
+--
+
+SELECT pg_catalog.setval('board_id', 2, true);
+
+
+--
+-- Data for Name: boards; Type: TABLE DATA; Schema: public; Owner: frontier
+--
+
+COPY boards (board_id, board_name, board_pass, max_players, last_used) FROM stdin;
+2	testing	9e885e403f88e66c84d6ac852ce1bb5b701357aa0c3aaa0d07f0c22fbe9cf4ec	10	1428551242
+\.
+
+
+--
+-- Name: object_id; Type: SEQUENCE SET; Schema: public; Owner: frontier
+--
+
+SELECT pg_catalog.setval('object_id', 5, true);
+
+
+--
+-- Data for Name: objects; Type: TABLE DATA; Schema: public; Owner: frontier
+--
+
+COPY objects (object_id, board_id, x, y, hull, object_radians, move_radians, move_speed, image, image_scale) FROM stdin;
+1	2	0	0	100	2.69953752	2.69953752	0	redship.png	1
+2	2	638.450256	-1828.88086	100	2.69953752	2.69953752	0	ship.png	1
+3	2	-180.774872	85.5595932	100	2.69953752	2.69953752	0	greyship.png	1
+4	2	-5423.24609	2566.78784	100	2.69953752	2.69953752	0	redship.png	1
+\.
+
+
+--
+-- Data for Name: ships; Type: TABLE DATA; Schema: public; Owner: frontier
+--
+
+COPY ships (object_id, board_id, ship_name, ship_pass, ship_engine_power, energy, shield) FROM stdin;
+1	2	Frontier::ShipAI::Orbiter_CPNNOYAPAY	47d5a7473033a836158179392a635a6f3155adf4ae739e0f463f741c37555f6c	0	100	100
+2	2	Frontier::ShipAI::Orbiter_YEBIIXPHYS	38e4fcf4b3b1bd67ad7b5e4fa928cf272663572e2df6fa0c9758707e78ac4c74	0	100	100
+3	2	Frontier::ShipAI::Orbiter_CYORBFHBWJ	34856c9793c29de2f6743045aa4c48d5d1eac6f13bca041786cc954ff93d8f39	0	100	100
+4	2	Frontier::ShipAI::Orbiter_JRPGKTRRME	69cb913dcdbd4d2ecf9457334eea93132d1594eba2016b5138dad79cd71977ab	0	100	100
+\.
+
+
+--
+-- Name: boards_board_name_key; Type: CONSTRAINT; Schema: public; Owner: frontier; Tablespace: 
+--
+
+ALTER TABLE ONLY boards
+    ADD CONSTRAINT boards_board_name_key UNIQUE (board_name);
+
+
+--
+-- Name: boards_pkey; Type: CONSTRAINT; Schema: public; Owner: frontier; Tablespace: 
+--
+
+ALTER TABLE ONLY boards
+    ADD CONSTRAINT boards_pkey PRIMARY KEY (board_id);
+
+
+--
+-- Name: objects_pkey; Type: CONSTRAINT; Schema: public; Owner: frontier; Tablespace: 
+--
+
+ALTER TABLE ONLY objects
+    ADD CONSTRAINT objects_pkey PRIMARY KEY (object_id);
+
+
+--
+-- Name: objects_board_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: frontier
+--
+
+ALTER TABLE ONLY objects
+    ADD CONSTRAINT objects_board_id_fkey FOREIGN KEY (board_id) REFERENCES boards(board_id) ON DELETE CASCADE;
+
+
+--
+-- Name: ships_board_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: frontier
+--
+
+ALTER TABLE ONLY ships
+    ADD CONSTRAINT ships_board_id_fkey FOREIGN KEY (board_id) REFERENCES boards(board_id) ON DELETE CASCADE;
+
+
+--
+-- Name: ships_object_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: frontier
+--
+
+ALTER TABLE ONLY ships
+    ADD CONSTRAINT ships_object_id_fkey FOREIGN KEY (object_id) REFERENCES objects(object_id) ON DELETE CASCADE;
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

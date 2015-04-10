@@ -5,6 +5,7 @@ use warnings;
 use Throw qw(throw);
 use Frontier::MetaCommon;
 use Digest::SHA qw(sha256_hex);
+use Frontier::Common;
 use Math::Trig;
 
 sub new {
@@ -13,9 +14,7 @@ sub new {
     $self;
 } # For Respite::Server
 
-# CREATE TABLE ships(ship_id INTEGER PRIMARY KEY NOT NULL, board_id INTEGER NOT NULL, ship_name VARCHAR(100) NOT NULL, ship_pass VARCHAR(100) NOT NULL,x REAL NOT NULL,y REAL NOT NULL,energy INTEGER NOT NULL, shield INTEGER NOT NULL, hull INTEGER NOT NULL, obj_radians REAL NOT NULL default 0, move_radians REAL NOT NULL default 0, move_speed REAL NOT NULL default 0, img VARCHAR(100) NOT NULL default 'ship.png', scale REAL NOT NULL default 1, ship_engine_power REAL default 0, FOREIGN KEY(ship_id) REFERENCES boards(board_id),UNIQUE(ship_name,board_id));
-
-sub dbh { my $self = shift; $self->{'server'}->{'base'}->dbh; } # TODO shoudln't need to make this in each method
+sub dbh { my $self = shift; $self->{'server'}->{'base'}->dbh; } # TODO shouldn't need to make this in each method
 
 sub enc {
     my ($self,$args) = @_;
@@ -30,7 +29,7 @@ sub __new__meta {
             ship_name => $Frontier::MetaCommon::args->{'ship_name'},
             ship_pass => $Frontier::MetaCommon::args->{'ship_pass'},
             board_pass => $Frontier::MetaCommon::args->{'board_pass'},
-            ship_img => {enum => ['ship.png','redship.png'],default=>'ship.png'},
+            ship_image => {enum => ['ship.png','redship.png'],default=>'ship.png'},
         },
         resp => $self->__info__meta()->{'resp'},
     };
@@ -42,9 +41,6 @@ sub __new {
     $args->{'board_name'} = $self->{'server'}->{'base'}->api_brand;
     my $board = $self->{'server'}->{'base'}->call('board_info'=>$args);
 
-    my $x = rand(9999) - 5000;
-    my $y = rand(9999) - 5000;
-$x=200;$y=200;
     my $energy = 100;
     my $hull = 100;
     my $shield = 100;
@@ -52,12 +48,14 @@ $x=200;$y=200;
     my $old_autocommit = $self->dbh->{AutoCommit};
     local $self->dbh->{AutoCommit} = 0;
     {
-        local $self->dbh->{'PrintError'} = 0;
-        $self->dbh->do('INSERT INTO ships (ship_name,ship_pass,board_id,x,y,energy,hull,shield,img) VALUES (?,?,?,?,?,?,?,?,?)',{},
-            $args->{'ship_name'},$self->enc($args),$board->{'board_id'},$x,$y,$energy,$hull,$shield,$args->{'ship_img'})
+        #local $self->dbh->{'PrintError'} = 0;
+        $self->dbh->do('INSERT INTO objects (board_id,hull,image,x,y) VALUES (?,?,?,200,200)',{},
+            $board->{'board_id'},$hull,$args->{'ship_image'})
             or throw 'Could not create ship';
     }
-    ($args->{'ship_id'}) = $self->dbh->selectrow_array('select last_value from ship_id');
+    ($args->{'ship_id'}) = $self->dbh->selectrow_array('select last_value from object_id');
+    $self->dbh->do('INSERT INTO ships (object_id,ship_name,ship_pass,board_id,energy,shield,ship_engine_power) VALUES (?,?,?,?,?,?,0)',{},
+        $args->{'ship_id'},$args->{'ship_name'},$self->enc($args),$board->{'board_id'},$energy,$shield);
     $self->dbh->commit unless $old_autocommit;
 
     $self->__info($args);
@@ -79,7 +77,7 @@ sub __info__meta {
 
 sub __info {
     my ($self,$args) = @_;
-    my $ship = $self->dbh->selectrow_hashref('SELECT * FROM ships WHERE ship_id = ?',{},$args->{'ship_id'});
+    my $ship = $self->dbh->selectrow_hashref('SELECT * FROM ships LEFT JOIN objects USING (object_id) WHERE object_id = ?',{},$args->{'ship_id'});
     delete $ship->{'ship_pass'};
     $ship->{$_} = int($ship->{$_}) foreach ('x','y');
     $ship;
@@ -108,8 +106,8 @@ sub __navigation__meta {
 
 sub __navigation {
     my ($self,$args) = @_;
-    $self->dbh->do('UPDATE ships SET obj_radians = ?,ship_engine_power = ? WHERE ship_id = ?',{},
-        $args->{'ship_radians'},$args->{'ship_engine_power'},$args->{'ship_id'});
+    $self->dbh->do('UPDATE objects SET object_radians = ? WHERE object_id = ?',{},$args->{'ship_radians'},$args->{'ship_id'});
+    $self->dbh->do('UPDATE ships SET ship_engine_power = ? WHERE object_id = ?',{},$args->{'ship_engine_power'},$args->{'ship_id'});
     {success=>1};
 }
 
@@ -218,8 +216,8 @@ sub __scan__meta {
             obj => [{
                 id => {
                     id => 'object id, listed again for convenience',
-                    img => 'Image to display for this object',
-                    scale => 'Size to display the img. 1 = 100%',
+                    image => 'Image to display for this object',
+                    image_scale => 'Size to display the image. 1 = 100%',
                     type => ['ship','projectile','beam'],
                     team => 'Which team is this object from.  Helpful to detect friend or foe',
                     obj_direction => 'The direction the object is compared to you',
@@ -238,30 +236,12 @@ sub __scan__meta {
     };
 }
 
-sub _distance {
-    my($obj1,$obj2) = @_;
-    return sqrt(abs($obj1->{'x'} - $obj2->{'x'}) ** 2 + abs($obj1->{'y'} - $obj2->{'y'}) ** 2);
-}
-sub _radians {
-    my($obj1,$obj2) = @_;
-    my $dy = $obj2->{'y'}-$obj1->{'y'};
-    my $dx = $obj2->{'x'}-$obj1->{'x'};
-    my $rad = abs($dx == 0 ? pi/2 : atan($dy/$dx));
-    if      ($dx <  0 && $dy >= 0) { $rad = $rad + pi
-    } elsif ($dx <  0 && $dy <  0) { $rad = pi - $rad 
-    } elsif ($dx >= 0 && $dy <  0) { $rad = $rad 
-    } else { $rad = -$rad;
-    }
-    while ($rad > 2*pi) { $rad -= 2*pi }
-    while ($rad < 0 ) { $rad += 2*pi }
-    2*pi - $rad;
-}
 sub __scan {
     my ($self, $args) = @_;
 
-    my $sth = $self->dbh->prepare('SELECT * FROM ships WHERE board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
+    my $sth = $self->dbh->prepare('SELECT * FROM ships LEFT JOIN objects USING (object_id) WHERE ships.board_id = (SELECT board_id FROM boards WHERE board_name = ?)');
     $sth->execute($self->{'server'}->{'base'}->api_brand);
-    my $obj = $sth->fetchall_hashref('ship_id');
+    my $obj = $sth->fetchall_hashref('object_id');
 
     # translate everything to be centered around ME
     my $d = {
@@ -273,13 +253,10 @@ sub __scan {
 
     my $obj_ret;
     foreach my $id (keys %$obj) {
-        $obj_ret->{$id}->{'obj_distance'} = _distance($obj->{$args->{'ship_id'}},$obj->{$id});
-        my $is_long = _distance($obj->{$args->{'ship_id'}},$obj->{$id}) > $long_range;
-        $obj_ret->{$id}->{'obj_direction'} = _radians($obj->{$args->{'ship_id'}},$obj->{$id});
-        $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('ship_id','img','scale','type','team');
-        $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}) foreach ('shield','hull','energy','move_radians','obj_radians','obj_speed');
-        $obj_ret->{$id}->{'x'} = ($is_long ? undef : $obj->{$id}->{'x'} - $d->{'x'});
-        $obj_ret->{$id}->{'y'} = ($is_long ? undef : $obj->{$id}->{'y'} - $d->{'y'});
+        my $is_long = Frontier::Common::distance($obj->{$args->{'ship_id'}},$obj->{$id}) > $long_range;
+        $obj_ret->{$id}->{'object_direction'} = Frontier::Common::radians($obj->{$args->{'ship_id'}},$obj->{$id});
+        $obj_ret->{$id}->{$_} = $obj->{$id}->{$_} foreach ('object_id','image','image_scale','type','team');
+        $obj_ret->{$id}->{$_} = ($is_long ? undef : $obj->{$id}->{$_}+0) foreach ('shield','hull','energy','move_radians','object_radians','move_speed','x','y');
     }
 
     return {
@@ -305,7 +282,7 @@ sub __exit__meta {
 
 sub __exit {
     my ($self,$args) = @_;
-    my $sth = $self->dbh->prepare('DELETE FROM ships WHERE ship_id = ?');
+    my $sth = $self->dbh->prepare('DELETE FROM objects WHERE object_id = ?');
     $sth->execute($args->{'ship_id'});
     {success=>1};
 }
