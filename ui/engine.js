@@ -127,11 +127,11 @@ function drawObj(obj) {
   ctx.rotate(obj.object_radians);
 
   ctx.fillStyle="blue";
-  ctx.fillRect(-25,25,obj.shield / 2,3);
+  ctx.fillRect(-25,25,json.obj[obj.object_id].shield / 2,3);
   ctx.fillStyle="green";
-  ctx.fillRect(-25,29,obj.hull / 2,3);
+  ctx.fillRect(-25,29,json.obj[obj.object_id].hull / 2,3);
   ctx.fillStyle="red";
-  ctx.fillRect(-25,33,obj.energy / 2,3);
+  ctx.fillRect(-25,33,json.obj[obj.object_id].energy / 2,3);
 
   ctx.translate(-obj.x, obj.y);
 }
