@@ -7,7 +7,14 @@ use config;
 
 # somewhere to stick all the common helper methods used by tons of things in Frontier
 
-sub new_dbh() { DBI->connect("dbi:Pg:dbname=".$config::config{'sql_db'}, $config::config{'sql_user'}, $config::config{'sql_pass'}, {AutoCommit => 1}); }
+sub new_dbh() {
+    DBI->connect(
+        "dbi:Pg:dbname=".$config::config{'sql_db'},
+        $config::config{'sql_user'},
+        $config::config{'sql_pass'},
+        { AutoCommit => 1 }
+    );
+}
 
 sub distance($$) {
     my($obj1,$obj2) = @_;

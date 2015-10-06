@@ -9,6 +9,8 @@ use DBD::SQLite;
 use Frontier::Common;
 use Throw qw(throw);
 
+use config;
+
 sub api_meta {
     return shift->{'api_meta'} ||= { # vtable cached here
         namespaces => {
@@ -107,9 +109,11 @@ sub check_permissions {
 sub memd {
     my ($self) = @_;
     $self->{'memd'} ||= do {
+        my $addr = $config::config{'memd'}->{'host'};
+        my $port = $config::config{'memd'}->{'port'};
         new Cache::Memcached::Fast({
             servers => [ { address => 'localhost:11211', weight => 2.5 },
-                         '192.168.254.2:11211',
+                         "$addr:$port",
                          { address => '/path/to/unix.sock', noreply => 1 } ],
             namespace => 'my:',
             connect_timeout => 0.2,

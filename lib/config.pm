@@ -17,9 +17,14 @@ sub load {
     $config->{'no_brand'} = 1;
     $config->{'salt'} = 'override me';
 
-    $config->{'sql_db'} = 'frontier';
+    $config->{'sql_db'}   = 'frontier';
     $config->{'sql_user'} = 'frontier';
     $config->{'sql_pass'} = 'override me';
+    
+    $config->{'memd'} = {
+        host => 'localhost',
+        port => 11211,
+    };
 
     $config->{'frontier_service'} = {
         remote => 1,
@@ -29,8 +34,8 @@ sub load {
         pass   => '-',
         port   => 50443,
         no_ssl => 1,
-        user   => 'jter',
-        group  => 'jter',
+        user   => 'user',
+        group  => 'user',
     };
 
     config::override->initialize() if eval {require config::override;};
